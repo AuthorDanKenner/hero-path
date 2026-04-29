@@ -188,6 +188,7 @@ export default function App() {
   const [xpPopups, setXpPopups] = useState([]);
   const [newHabit, setNewHabit] = useState("");
   const [newGoal, setNewGoal] = useState("");
+  const [newGoalMilestones, setNewGoalMilestones] = useState(["", "", "", ""]);
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
@@ -276,11 +277,14 @@ export default function App() {
 
   const addGoal = () => {
     if (!newGoal.trim()) return;
+    const filledMilestones = newGoalMilestones.filter(m => m.trim());
+    const milestones = filledMilestones.length > 0 ? filledMilestones : ["Phase 1", "Phase 2", "Phase 3", "Complete"];
     setState(prev => ({
       ...prev,
-      goals: [...prev.goals, { id: Date.now(), name: newGoal, progress: 0, xpReward: 200, stat: "wisdom", milestones: ["Phase 1", "Phase 2", "Phase 3", "Complete"], completedMilestones: 0 }]
+      goals: [...prev.goals, { id: Date.now(), name: newGoal, progress: 0, xpReward: 200, stat: "wisdom", milestones, completedMilestones: 0 }]
     }));
     setNewGoal("");
+    setNewGoalMilestones(["", "", "", ""]);
     setShowAddGoal(false);
   };
 
@@ -553,28 +557,55 @@ export default function App() {
 
             {showAddGoal ? (
               <Card>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    value={newGoal}
-                    onChange={e => setNewGoal(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && addGoal()}
-                    placeholder="New quest..."
-                    style={{
-                      flex: 1, background: "#0d0b07", border: "1px solid #3a2e1a", borderRadius: 6,
-                      color: "#c8b07a", padding: "8px 12px", fontFamily: "'EB Garamond', serif", fontSize: 14,
-                      transition: "border-color 0.2s",
-                    }}
-                  />
-                  <button onClick={addGoal} className="action-btn" style={{
-                    background: "#c47c1a", border: "none", borderRadius: 6, color: "#0d0b07",
-                    padding: "8px 14px", fontFamily: "'Cinzel', serif", fontSize: 11, fontWeight: 700,
-                    cursor: "pointer", transition: "all 0.2s",
-                  }}>Add</button>
-                  <button onClick={() => setShowAddGoal(false)} style={{
-                    background: "transparent", border: "1px solid #3a2e1a", borderRadius: 6, color: "#6a5030",
-                    padding: "8px 10px", cursor: "pointer", fontSize: 14,
-                  }}>✕</button>
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, color: "#a89060", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6, fontFamily: "'Cinzel', serif" }}>Quest Name</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      value={newGoal}
+                      onChange={e => setNewGoal(e.target.value)}
+                      placeholder="Name your quest..."
+                      style={{
+                        flex: 1, background: "#0d0b07", border: "1px solid #3a2e1a", borderRadius: 6,
+                        color: "#c8b07a", padding: "8px 12px", fontFamily: "'EB Garamond', serif", fontSize: 14,
+                        transition: "border-color 0.2s",
+                      }}
+                    />
+                    <button onClick={() => { setShowAddGoal(false); setNewGoal(""); setNewGoalMilestones(["","","",""]); }} style={{
+                      background: "transparent", border: "1px solid #3a2e1a", borderRadius: 6, color: "#6a5030",
+                      padding: "8px 10px", cursor: "pointer", fontSize: 14,
+                    }}>✕</button>
+                  </div>
                 </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, color: "#a89060", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6, fontFamily: "'Cinzel', serif" }}>Milestones <span style={{ color: "#4a3820", fontFamily: "'EB Garamond', serif", textTransform: "none", letterSpacing: 0 }}>(up to 4)</span></div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {newGoalMilestones.map((m, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ fontSize: 10, color: "#4a3820", width: 16, textAlign: "center", flexShrink: 0 }}>{i + 1}</div>
+                        <input
+                          value={m}
+                          onChange={e => {
+                            const updated = [...newGoalMilestones];
+                            updated[i] = e.target.value;
+                            setNewGoalMilestones(updated);
+                          }}
+                          onKeyDown={e => e.key === "Enter" && i === newGoalMilestones.length - 1 && addGoal()}
+                          placeholder={`Milestone ${i + 1}...`}
+                          style={{
+                            flex: 1, background: "#0d0b07", border: "1px solid #2a2010", borderRadius: 6,
+                            color: "#c8b07a", padding: "6px 10px", fontFamily: "'EB Garamond', serif", fontSize: 13,
+                            transition: "border-color 0.2s",
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={addGoal} className="action-btn" style={{
+                  width: "100%", background: "#c47c1a", border: "none", borderRadius: 6, color: "#0d0b07",
+                  padding: "9px", fontFamily: "'Cinzel', serif", fontSize: 11, fontWeight: 700,
+                  cursor: "pointer", transition: "all 0.2s", letterSpacing: 1,
+                }}>Begin Quest</button>
               </Card>
             ) : (
               <button onClick={() => setShowAddGoal(true)} className="action-btn" style={{
