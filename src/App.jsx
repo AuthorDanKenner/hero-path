@@ -29,6 +29,7 @@ const INITIAL_STATE = {
     { id: 6, name: "Arcane Scholar", desc: "Gain 1000 total XP", earned: false, icon: "✨" },
   ],
   log: [],
+  lastResetDate: new Date().toLocaleDateString("en-CA"),
 };
 
 const STORAGE_KEY = "heros-path-save";
