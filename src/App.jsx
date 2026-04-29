@@ -33,7 +33,7 @@ const INITIAL_STATE = {
 };
 
 const STORAGE_KEY = "heros-path-save";
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.4.1";
 
 function todayString() {
   return new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD"
@@ -268,15 +268,9 @@ export default function App() {
   };
 
   const completeHabit = (id) => {
-    console.log("completeHabit called with id:", id);
-    console.log("current habits:", state.habits);
     setState(prev => {
       const habit = prev.habits.find(h => h.id === id);
-      console.log("found habit:", habit);
-      if (!habit || habit.completedToday) {
-        console.log("blocked - habit not found or already completed");
-        return prev;
-      }
+      if (!habit || habit.completedToday) return prev;
 
       const habits = prev.habits.map(h => h.id === id
         ? { ...h, completedToday: true, streak: h.streak + 1 }
@@ -495,23 +489,23 @@ export default function App() {
               <SectionTitle>Daily Rites</SectionTitle>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {state.habits.map(h => (
-                  <div key={h.id} className="habit-btn" style={{
+                  <div key={h.id} className="habit-btn" onClick={() => !h.completedToday && completeHabit(h.id)} style={{
                     display: "flex", alignItems: "center", gap: 12, padding: "10px 12px",
                     border: `1px solid ${h.completedToday ? "#3a5a2a" : "#2a2010"}`,
                     borderRadius: 6, background: h.completedToday ? "#0f1e0c" : "#13100a",
                     transition: "all 0.2s", cursor: h.completedToday ? "default" : "pointer",
                   }}>
-                    <button onClick={() => !h.completedToday && completeHabit(h.id)} className="complete-btn" style={{
+                    <div className="complete-btn" style={{
                       width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
                       border: `2px solid ${h.completedToday ? "#5cb85c" : STAT_COLORS[h.stat]}`,
                       background: h.completedToday ? "#5cb85c20" : "transparent",
                       color: h.completedToday ? "#5cb85c" : STAT_COLORS[h.stat],
-                      fontSize: 14, cursor: h.completedToday ? "default" : "pointer",
+                      fontSize: 14,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       transition: "all 0.2s",
                     }}>
                       {h.completedToday ? "✓" : "○"}
-                    </button>
+                    </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14, color: h.completedToday ? "#6a8a5a" : "#c8b07a", textDecoration: h.completedToday ? "line-through" : "none" }}>{h.name}</div>
                       <div style={{ fontSize: 11, color: "#6a5030", marginTop: 2 }}>
