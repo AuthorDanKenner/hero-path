@@ -33,6 +33,7 @@ const INITIAL_STATE = {
 };
 
 const STORAGE_KEY = "heros-path-save";
+const APP_VERSION = "1.4.0";
 
 function todayString() {
   return new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD"
@@ -44,15 +45,18 @@ function loadState() {
     if (!saved) return { ...INITIAL_STATE, lastResetDate: todayString() };
     const parsed = JSON.parse(saved);
     const today = todayString();
-    // If last reset was before today, uncheck all habits (but keep streaks)
-    if (parsed.lastResetDate !== today) {
+    // Only reset if lastResetDate exists AND is a past date
+    if (parsed.lastResetDate && parsed.lastResetDate !== today) {
       const habits = parsed.habits.map(h => ({
         ...h,
-        // If they didn't complete it yesterday, break the streak
         streak: h.completedToday ? h.streak : 0,
         completedToday: false,
       }));
       return { ...parsed, habits, lastResetDate: today };
+    }
+    // If lastResetDate is missing, just set it to today without resetting habits
+    if (!parsed.lastResetDate) {
+      return { ...parsed, lastResetDate: today };
     }
     return parsed;
   } catch {
@@ -413,6 +417,7 @@ export default function App() {
           <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: 26, fontWeight: 900, color: "#d4a843", letterSpacing: 2, textShadow: "0 0 30px #d4a84360" }}>
             The Hero's Path
           </h1>
+          <div style={{ fontSize: 10, color: "#3a2e1a", letterSpacing: 1, marginTop: 3 }}>v{APP_VERSION}</div>
           <button
             onClick={() => setShowResetModal(true)}
             className="reset-btn"
