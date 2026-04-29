@@ -33,12 +33,29 @@ const INITIAL_STATE = {
 
 const STORAGE_KEY = "heros-path-save";
 
+function todayString() {
+  return new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD"
+}
+
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : INITIAL_STATE;
+    if (!saved) return { ...INITIAL_STATE, lastResetDate: todayString() };
+    const parsed = JSON.parse(saved);
+    const today = todayString();
+    // If last reset was before today, uncheck all habits (but keep streaks)
+    if (parsed.lastResetDate !== today) {
+      const habits = parsed.habits.map(h => ({
+        ...h,
+        // If they didn't complete it yesterday, break the streak
+        streak: h.completedToday ? h.streak : 0,
+        completedToday: false,
+      }));
+      return { ...parsed, habits, lastResetDate: today };
+    }
+    return parsed;
   } catch {
-    return INITIAL_STATE;
+    return { ...INITIAL_STATE, lastResetDate: todayString() };
   }
 }
 
@@ -197,6 +214,23 @@ export default function App() {
   useEffect(() => {
     saveState(state);
   }, [state]);
+
+  // Check for new day every minute (handles app left open past midnight)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const today = todayString();
+      setState(prev => {
+        if (prev.lastResetDate === today) return prev;
+        const habits = prev.habits.map(h => ({
+          ...h,
+          streak: h.completedToday ? h.streak : 0,
+          completedToday: false,
+        }));
+        return { ...prev, habits, lastResetDate: today };
+      });
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const gainXP = (amount, stat) => {
     const popupId = Date.now();
