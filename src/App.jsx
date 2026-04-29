@@ -264,6 +264,9 @@ export default function App() {
 
   const completeHabit = (id) => {
     setState(prev => {
+      const habit = prev.habits.find(h => h.id === id);
+      if (!habit || habit.completedToday) return prev;
+
       const habits = prev.habits.map(h => h.id === id
         ? { ...h, completedToday: true, streak: h.streak + 1 }
         : h
@@ -276,10 +279,36 @@ export default function App() {
         if (m.id === 2 && habits.some(h => h.streak >= 7)) return { ...m, earned: true };
         return m;
       });
-      return { ...prev, habits, milestones };
+
+      // Handle XP inline to avoid stale state
+      const char = { ...prev.character };
+      char.xp += habit.xpReward;
+      char.totalXpEarned += habit.xpReward;
+      char.stats = { ...char.stats, [habit.stat]: char.stats[habit.stat] + 1 };
+      while (char.xp >= char.xpToNext) {
+        char.xp -= char.xpToNext;
+        char.level += 1;
+        char.xpToNext = Math.floor(char.xpToNext * 1.4);
+        char.class = CLASS_BY_LEVEL[Math.min(char.level - 1, 9)];
+      }
+      const updatedMilestones = milestones.map(m => {
+        if (m.earned) return m;
+        if (m.id === 6 && char.totalXpEarned >= 1000) return { ...m, earned: true };
+        if (m.id === 3 && char.level >= 5) return { ...m, earned: true };
+        return m;
+      });
+      const logEntry = { id: Date.now(), text: `Gained ${habit.xpReward} XP`, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+
+      return { ...prev, habits, milestones: updatedMilestones, character: char, log: [logEntry, ...prev.log].slice(0, 10) };
     });
+
+    // Show floating XP popup (purely visual, doesn't need exact state)
     const habit = state.habits.find(h => h.id === id);
-    if (habit) gainXP(habit.xpReward, habit.stat);
+    if (habit) {
+      const popupId = Date.now();
+      setXpPopups(p => [...p, { id: popupId, amount: habit.xpReward }]);
+      setTimeout(() => setXpPopups(p => p.filter(x => x.id !== popupId)), 1500);
+    }
   };
 
   const advanceGoal = (id) => {
