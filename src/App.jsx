@@ -268,9 +268,15 @@ export default function App() {
   };
 
   const completeHabit = (id) => {
+    console.log("completeHabit called with id:", id);
+    console.log("current habits:", state.habits);
     setState(prev => {
       const habit = prev.habits.find(h => h.id === id);
-      if (!habit || habit.completedToday) return prev;
+      console.log("found habit:", habit);
+      if (!habit || habit.completedToday) {
+        console.log("blocked - habit not found or already completed");
+        return prev;
+      }
 
       const habits = prev.habits.map(h => h.id === id
         ? { ...h, completedToday: true, streak: h.streak + 1 }
