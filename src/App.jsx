@@ -188,7 +188,7 @@ export default function App() {
   const [xpPopups, setXpPopups] = useState([]);
   const [newHabit, setNewHabit] = useState("");
   const [newGoal, setNewGoal] = useState("");
-  const [newGoalMilestones, setNewGoalMilestones] = useState(["", "", "", ""]);
+  const [newGoalMilestones, setNewGoalMilestones] = useState([""]);
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
@@ -284,7 +284,7 @@ export default function App() {
       goals: [...prev.goals, { id: Date.now(), name: newGoal, progress: 0, xpReward: 200, stat: "wisdom", milestones, completedMilestones: 0 }]
     }));
     setNewGoal("");
-    setNewGoalMilestones(["", "", "", ""]);
+    setNewGoalMilestones([""]);
     setShowAddGoal(false);
   };
 
@@ -570,14 +570,14 @@ export default function App() {
                         transition: "border-color 0.2s",
                       }}
                     />
-                    <button onClick={() => { setShowAddGoal(false); setNewGoal(""); setNewGoalMilestones(["","","",""]); }} style={{
+                    <button onClick={() => { setShowAddGoal(false); setNewGoal(""); setNewGoalMilestones([""]); }} style={{
                       background: "transparent", border: "1px solid #3a2e1a", borderRadius: 6, color: "#6a5030",
                       padding: "8px 10px", cursor: "pointer", fontSize: 14,
                     }}>✕</button>
                   </div>
                 </div>
                 <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, color: "#a89060", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6, fontFamily: "'Cinzel', serif" }}>Milestones <span style={{ color: "#4a3820", fontFamily: "'EB Garamond', serif", textTransform: "none", letterSpacing: 0 }}>(up to 4)</span></div>
+                  <div style={{ fontSize: 11, color: "#a89060", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6, fontFamily: "'Cinzel', serif" }}>Milestones</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {newGoalMilestones.map((m, i) => (
                       <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -589,7 +589,6 @@ export default function App() {
                             updated[i] = e.target.value;
                             setNewGoalMilestones(updated);
                           }}
-                          onKeyDown={e => e.key === "Enter" && i === newGoalMilestones.length - 1 && addGoal()}
                           placeholder={`Milestone ${i + 1}...`}
                           style={{
                             flex: 1, background: "#0d0b07", border: "1px solid #2a2010", borderRadius: 6,
@@ -597,9 +596,28 @@ export default function App() {
                             transition: "border-color 0.2s",
                           }}
                         />
+                        {newGoalMilestones.length > 1 && (
+                          <button
+                            onClick={() => setNewGoalMilestones(newGoalMilestones.filter((_, idx) => idx !== i))}
+                            onMouseOver={e => e.currentTarget.style.color = "#e05c5c"}
+                            onMouseOut={e => e.currentTarget.style.color = "#4a2a2a"}
+                            style={{ background: "transparent", border: "none", color: "#4a2a2a", fontSize: 13, cursor: "pointer", padding: "2px 4px", flexShrink: 0, transition: "color 0.2s" }}
+                          >✕</button>
+                        )}
                       </div>
                     ))}
                   </div>
+                  <button
+                    onClick={() => setNewGoalMilestones([...newGoalMilestones, ""])}
+                    style={{
+                      marginTop: 8, width: "100%", padding: "6px", background: "transparent",
+                      border: "1px dashed #2a2010", borderRadius: 6, color: "#4a3820",
+                      fontFamily: "'Cinzel', serif", fontSize: 10, letterSpacing: 1,
+                      textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s",
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = "#d4a843"; e.currentTarget.style.color = "#d4a843"; }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = "#2a2010"; e.currentTarget.style.color = "#4a3820"; }}
+                  >+ Add Milestone</button>
                 </div>
                 <button onClick={addGoal} className="action-btn" style={{
                   width: "100%", background: "#c47c1a", border: "none", borderRadius: 6, color: "#0d0b07",
