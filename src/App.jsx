@@ -284,6 +284,14 @@ export default function App() {
     setShowAddGoal(false);
   };
 
+  const deleteHabit = (id) => {
+    setState(prev => ({ ...prev, habits: prev.habits.filter(h => h.id !== id) }));
+  };
+
+  const deleteGoal = (id) => {
+    setState(prev => ({ ...prev, goals: prev.goals.filter(g => g.id !== id) }));
+  };
+
   const handleReset = () => {
     localStorage.removeItem(STORAGE_KEY);
     setState(INITIAL_STATE);
@@ -431,9 +439,14 @@ export default function App() {
                         {STAT_ICONS[h.stat]} +{h.xpReward} XP · {h.stat}
                       </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
+                    <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                       <div style={{ fontSize: 16 }}>🔥</div>
                       <div style={{ fontSize: 10, color: "#d4a843", fontWeight: 700 }}>{h.streak}d</div>
+                      <button onClick={() => deleteHabit(h.id)}
+                        onMouseOver={e => e.currentTarget.style.color = "#e05c5c"}
+                        onMouseOut={e => e.currentTarget.style.color = "#4a2a2a"}
+                        style={{ background: "transparent", border: "none", color: "#4a2a2a", fontSize: 13, cursor: "pointer", padding: "2px 4px", lineHeight: 1, transition: "color 0.2s" }}
+                        title="Delete habit">✕</button>
                     </div>
                   </div>
                 ))}
@@ -490,7 +503,14 @@ export default function App() {
                         <div style={{ fontFamily: "'Cinzel', serif", fontSize: 14, color: "#f0d890", marginBottom: 2 }}>{g.name}</div>
                         <div style={{ fontSize: 11, color: "#6a5030" }}>{STAT_ICONS[g.stat]} +{g.xpReward} XP total · {g.stat}</div>
                       </div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                       <div style={{ fontSize: 18, fontWeight: 900, color: "#d4a843", fontFamily: "'Cinzel', serif" }}>{pct}%</div>
+                      <button onClick={() => deleteGoal(g.id)}
+                        onMouseOver={e => e.currentTarget.style.color = "#e05c5c"}
+                        onMouseOut={e => e.currentTarget.style.color = "#4a2a2a"}
+                        style={{ background: "transparent", border: "none", color: "#4a2a2a", fontSize: 13, cursor: "pointer", padding: "2px 4px", lineHeight: 1, transition: "color 0.2s", marginTop: 2 }}
+                        title="Delete quest">✕</button>
+                    </div>
                     </div>
 
                     <div style={{ background: "#0d0b07", border: "1px solid #2a2010", borderRadius: 4, height: 8, overflow: "hidden", marginBottom: 12 }}>
