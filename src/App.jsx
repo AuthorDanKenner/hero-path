@@ -11,18 +11,18 @@ const INITIAL_STATE = {
     totalXpEarned: 0,
   },
   habits: [
-    { id: 1, name: "Morning Exercise", xpReward: 20, stat: "strength", completedToday: false, streak: 3 },
-    { id: 2, name: "Read 20 mins", xpReward: 15, stat: "wisdom", completedToday: false, streak: 7 },
-    { id: 3, name: "Meditate", xpReward: 10, stat: "focus", completedToday: false, streak: 1 },
+    { id: 1, name: "Morning Exercise", xpReward: 20, stat: "strength", completedToday: false, streak: 0 },
+    { id: 2, name: "Read 20 mins", xpReward: 15, stat: "wisdom", completedToday: false, streak: 0 },
+    { id: 3, name: "Meditate", xpReward: 10, stat: "focus", completedToday: false, streak: 0 },
   ],
   goals: [
-    { id: 1, name: "Write a Novel", progress: 40, xpReward: 500, stat: "wisdom", milestones: ["Outline done", "Chapter 10", "Chapter 20", "First Draft"], completedMilestones: 1 },
-    { id: 2, name: "Run a 5K", progress: 60, xpReward: 300, stat: "endurance", milestones: ["1km run", "2km run", "3km run", "5km run"], completedMilestones: 2 },
-    { id: 3, name: "Learn Spanish", progress: 20, xpReward: 400, stat: "focus", milestones: ["A1 basics", "A2 level", "B1 level", "Conversational"], completedMilestones: 0 },
+    { id: 1, name: "Write a Novel", progress: 0, xpReward: 500, stat: "wisdom", milestones: ["Outline done", "Chapter 10", "Chapter 20", "First Draft"], completedMilestones: 0 },
+    { id: 2, name: "Run a 5K", progress: 0, xpReward: 300, stat: "endurance", milestones: ["1km run", "2km run", "3km run", "5km run"], completedMilestones: 0 },
+    { id: 3, name: "Learn Spanish", progress: 0, xpReward: 400, stat: "focus", milestones: ["A1 basics", "A2 level", "B1 level", "Conversational"], completedMilestones: 0 },
   ],
   milestones: [
-    { id: 1, name: "First Blood", desc: "Complete your first habit", earned: true, icon: "⚔️" },
-    { id: 2, name: "Streak Warrior", desc: "Maintain a 7-day streak", earned: true, icon: "🔥" },
+    { id: 1, name: "First Blood", desc: "Complete your first habit", earned: false, icon: "⚔️" },
+    { id: 2, name: "Streak Warrior", desc: "Maintain a 7-day streak", earned: false, icon: "🔥" },
     { id: 3, name: "Level 5 Sage", desc: "Reach level 5", earned: false, icon: "📜" },
     { id: 4, name: "Quest Keeper", desc: "Complete a long-term goal", earned: false, icon: "🏆" },
     { id: 5, name: "Iron Will", desc: "Complete all habits in a day", earned: false, icon: "🛡️" },
@@ -30,6 +30,23 @@ const INITIAL_STATE = {
   ],
   log: [],
 };
+
+const STORAGE_KEY = "heros-path-save";
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : INITIAL_STATE;
+  } catch {
+    return INITIAL_STATE;
+  }
+}
+
+function saveState(state) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+}
 
 const STAT_COLORS = {
   strength: "#e05c5c",
@@ -44,7 +61,7 @@ const CLASS_BY_LEVEL = [
   "Champion", "Veteran", "Elite", "Master", "Legend"
 ];
 
-function XPBar({ current, max, level }) {
+function XPBar({ current, max }) {
   const pct = Math.min((current / max) * 100, 100);
   return (
     <div style={{ position: "relative" }}>
@@ -127,14 +144,58 @@ function FloatingXP({ amount, id }) {
   );
 }
 
+function ResetModal({ onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "#00000090", zIndex: 10000,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+    }}>
+      <div style={{
+        background: "linear-gradient(160deg, #1e1a10, #16130c)",
+        border: "1px solid #8b0000",
+        borderRadius: 10, padding: "28px 24px", maxWidth: 320, width: "100%",
+        textAlign: "center",
+        boxShadow: "0 0 40px #8b000040",
+      }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>💀</div>
+        <div style={{ fontFamily: "'Cinzel', serif", fontSize: 16, color: "#e05c5c", marginBottom: 8 }}>
+          Abandon Your Journey?
+        </div>
+        <div style={{ fontSize: 13, color: "#a89060", marginBottom: 24, lineHeight: 1.6 }}>
+          All progress, XP, levels, and achievements will be lost forever. This cannot be undone.
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onCancel} style={{
+            flex: 1, padding: "10px", background: "transparent",
+            border: "1px solid #3a2e1a", borderRadius: 6, color: "#a89060",
+            fontFamily: "'Cinzel', serif", fontSize: 11, cursor: "pointer",
+          }}>Cancel</button>
+          <button onClick={onConfirm} style={{
+            flex: 1, padding: "10px", background: "#3a0000",
+            border: "1px solid #8b0000", borderRadius: 6, color: "#e05c5c",
+            fontFamily: "'Cinzel', serif", fontSize: 11, cursor: "pointer",
+            letterSpacing: 1,
+          }}>Reset All</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const [state, setState] = useState(INITIAL_STATE);
+  const [state, setState] = useState(loadState);
   const [tab, setTab] = useState("habits");
   const [xpPopups, setXpPopups] = useState([]);
   const [newHabit, setNewHabit] = useState("");
   const [newGoal, setNewGoal] = useState("");
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [showAddGoal, setShowAddGoal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+
+  // Save to localStorage whenever state changes
+  useEffect(() => {
+    saveState(state);
+  }, [state]);
 
   const gainXP = (amount, stat) => {
     const popupId = Date.now();
@@ -173,9 +234,13 @@ export default function App() {
         : h
       );
       const allDone = habits.every(h => h.completedToday);
-      const milestones = prev.milestones.map(m =>
-        m.id === 5 && allDone ? { ...m, earned: true } : m
-      );
+      const milestones = prev.milestones.map(m => {
+        if (m.earned) return m;
+        if (m.id === 1) return { ...m, earned: true };
+        if (m.id === 5 && allDone) return { ...m, earned: true };
+        if (m.id === 2 && habits.some(h => h.streak >= 7)) return { ...m, earned: true };
+        return m;
+      });
       return { ...prev, habits, milestones };
     });
     const habit = state.habits.find(h => h.id === id);
@@ -219,6 +284,13 @@ export default function App() {
     setShowAddGoal(false);
   };
 
+  const handleReset = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setState(INITIAL_STATE);
+    setShowResetModal(false);
+    setTab("habits");
+  };
+
   const char = state.character;
 
   const tabs = [
@@ -249,20 +321,33 @@ export default function App() {
         .tab-btn:hover { color: #d4a843 !important; }
         .action-btn:hover { background: #c47c1a !important; transform: translateY(-1px); box-shadow: 0 4px 16px #d4a84340 !important; }
         .complete-btn:hover { opacity: 0.85; transform: scale(1.05); }
+        .reset-btn:hover { color: #e05c5c !important; border-color: #e05c5c !important; }
         input { outline: none; }
         input:focus { border-color: #d4a843 !important; }
       `}</style>
 
+      {showResetModal && <ResetModal onConfirm={handleReset} onCancel={() => setShowResetModal(false)} />}
       {xpPopups.map(p => <FloatingXP key={p.id} amount={p.amount} id={p.id} />)}
 
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "20px 16px 40px" }}>
 
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
+        <div style={{ textAlign: "center", marginBottom: 24, position: "relative" }}>
           <div style={{ fontSize: 11, letterSpacing: 4, color: "#6a5030", textTransform: "uppercase", marginBottom: 4 }}>Chronicles of</div>
           <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: 26, fontWeight: 900, color: "#d4a843", letterSpacing: 2, textShadow: "0 0 30px #d4a84360" }}>
             The Hero's Path
           </h1>
+          <button
+            onClick={() => setShowResetModal(true)}
+            className="reset-btn"
+            style={{
+              position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
+              background: "transparent", border: "1px solid #3a2e1a", borderRadius: 6,
+              color: "#4a3820", fontSize: 10, fontFamily: "'Cinzel', serif",
+              letterSpacing: 1, padding: "5px 8px", cursor: "pointer",
+              textTransform: "uppercase", transition: "all 0.2s",
+            }}
+          >↺ Reset</button>
         </div>
 
         {/* Character Card */}
@@ -291,7 +376,7 @@ export default function App() {
               <div style={{ fontSize: 12, color: "#a89060", marginBottom: 10, letterSpacing: 1 }}>
                 {CLASS_BY_LEVEL[Math.min(char.level - 1, 9)]}
               </div>
-              <XPBar current={char.xp} max={char.xpToNext} level={char.level} />
+              <XPBar current={char.xp} max={char.xpToNext} />
             </div>
           </div>
 
@@ -408,7 +493,6 @@ export default function App() {
                       <div style={{ fontSize: 18, fontWeight: 900, color: "#d4a843", fontFamily: "'Cinzel', serif" }}>{pct}%</div>
                     </div>
 
-                    {/* Progress bar */}
                     <div style={{ background: "#0d0b07", border: "1px solid #2a2010", borderRadius: 4, height: 8, overflow: "hidden", marginBottom: 12 }}>
                       <div style={{
                         width: `${pct}%`, height: "100%",
@@ -418,7 +502,6 @@ export default function App() {
                       }} />
                     </div>
 
-                    {/* Milestones */}
                     <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
                       {g.milestones.map((m, i) => (
                         <div key={i} style={{
@@ -507,7 +590,6 @@ export default function App() {
               </div>
             </Card>
 
-            {/* Activity Log */}
             {state.log.length > 0 && (
               <Card>
                 <SectionTitle>Recent Deeds</SectionTitle>
