@@ -138,6 +138,9 @@ export default function HeroPath() {
   const [levelUpAnim, setLevelUpAnim] = useState(false);
   const [showNewRite, setShowNewRite] = useState(false);
   const [newRite, setNewRite] = useState({ name: "", desc: "", stat: "discipline", xpReward: 15, icon: "✍️" });
+  const [showNewQuest, setShowNewQuest] = useState(false);
+  const [newQuest, setNewQuest] = useState({ name: "", stat: "discipline", xpReward: 200, icon: "🗺️", milestones: [""], });
+  const [newMilestoneInput, setNewMilestoneInput] = useState("");
 
   useEffect(() => { saveState(state); }, [state]);
 
@@ -323,6 +326,32 @@ export default function HeroPath() {
   function deleteHabit(id) {
     setState(prev => ({ ...prev, habits: prev.habits.filter(h => h.id !== id) }));
     notify("Rite removed.", "#6b5a80");
+  }
+
+  function createQuest() {
+    const validMilestones = newQuest.milestones.filter(m => m.trim());
+    if (!newQuest.name.trim() || validMilestones.length === 0) return;
+    setState(prev => ({
+      ...prev,
+      goals: [...prev.goals, {
+        id: Date.now(),
+        name: newQuest.name.trim(),
+        stat: newQuest.stat,
+        xpReward: newQuest.xpReward,
+        icon: newQuest.icon,
+        milestones: validMilestones,
+        completedMilestones: 0,
+        progress: 0,
+      }]
+    }));
+    setNewQuest({ name: "", stat: "discipline", xpReward: 200, icon: "🗺️", milestones: [""] });
+    setShowNewQuest(false);
+    notify("New quest added to the board!", STAT_COLORS[newQuest.stat]);
+  }
+
+  function deleteQuest(id) {
+    setState(prev => ({ ...prev, goals: prev.goals.filter(g => g.id !== id) }));
+    notify("Quest removed.", "#6b5a80");
   }
 
   function resetGame() {
@@ -599,9 +628,108 @@ export default function HeroPath() {
         {/* QUESTS */}
         {activeTab === "goals" && (
           <div>
-            <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
-              Active Quests
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, textTransform: "uppercase" }}>Active Quests</div>
+              <button onClick={() => setShowNewQuest(v => !v)} style={{
+                background: showNewQuest ? "#2a1f40" : "transparent",
+                border: "1px solid #3a2a5a", color: "#a07ac0", fontSize: 12,
+                padding: "4px 12px", borderRadius: 20, cursor: "pointer", fontFamily: "inherit",
+              }}>{showNewQuest ? "✕ Cancel" : "+ New Quest"}</button>
             </div>
+
+            {/* CREATE QUEST FORM */}
+            {showNewQuest && (
+              <div style={{ marginBottom: 16, padding: 14, background: "#1a1030", border: "1px solid #3a2a5a", borderRadius: 10 }}>
+                <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Forge a New Quest</div>
+
+                {/* Name */}
+                <input
+                  value={newQuest.name}
+                  onChange={e => setNewQuest(q => ({ ...q, name: e.target.value }))}
+                  placeholder="Quest name..."
+                  style={{
+                    width: "100%", boxSizing: "border-box", padding: "8px 10px",
+                    background: "#120d20", border: "1px solid #3a2a5a", borderRadius: 8,
+                    color: "#e8d5b0", fontSize: 13, fontFamily: "inherit", marginBottom: 10,
+                  }}
+                />
+
+                {/* Stat Picker */}
+                <div style={{ fontSize: 11, color: "#8b7aaa", marginBottom: 6 }}>ATTRIBUTE</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 10 }}>
+                  {Object.entries(STAT_COLORS).map(([stat, color]) => (
+                    <button key={stat} onClick={() => setNewQuest(q => ({ ...q, stat }))} style={{
+                      padding: "6px 4px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+                      border: `2px solid ${newQuest.stat === stat ? color : "#2a1f40"}`,
+                      background: newQuest.stat === stat ? `${color}22` : "#120d20",
+                      color: newQuest.stat === stat ? color : "#6b5a80", fontSize: 11,
+                      textTransform: "capitalize",
+                    }}>{stat}</button>
+                  ))}
+                </div>
+
+                {/* XP Reward */}
+                <div style={{ fontSize: 11, color: "#8b7aaa", marginBottom: 6 }}>
+                  TOTAL XP REWARD: <span style={{ color: STAT_COLORS[newQuest.stat], fontWeight: "bold" }}>{newQuest.xpReward}</span>
+                </div>
+                <input type="range" min="50" max="1000" step="50" value={newQuest.xpReward}
+                  onChange={e => setNewQuest(q => ({ ...q, xpReward: Number(e.target.value) }))}
+                  style={{ width: "100%", accentColor: STAT_COLORS[newQuest.stat], marginBottom: 10 }}
+                />
+
+                {/* Icon Picker */}
+                <div style={{ fontSize: 11, color: "#8b7aaa", marginBottom: 6 }}>ICON</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                  {ICONS.map(icon => (
+                    <button key={icon} onClick={() => setNewQuest(q => ({ ...q, icon }))} style={{
+                      width: 34, height: 34, borderRadius: 8, fontSize: 16, cursor: "pointer",
+                      border: `2px solid ${newQuest.icon === icon ? STAT_COLORS[newQuest.stat] : "#2a1f40"}`,
+                      background: newQuest.icon === icon ? `${STAT_COLORS[newQuest.stat]}22` : "#120d20",
+                    }}>{icon}</button>
+                  ))}
+                </div>
+
+                {/* Milestones */}
+                <div style={{ fontSize: 11, color: "#8b7aaa", marginBottom: 6 }}>MILESTONES</div>
+                {newQuest.milestones.map((m, i) => (
+                  <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                    <input
+                      value={m}
+                      onChange={e => {
+                        const updated = [...newQuest.milestones];
+                        updated[i] = e.target.value;
+                        setNewQuest(q => ({ ...q, milestones: updated }));
+                      }}
+                      placeholder={`Milestone ${i + 1}...`}
+                      style={{
+                        flex: 1, padding: "7px 10px",
+                        background: "#120d20", border: "1px solid #3a2a5a", borderRadius: 8,
+                        color: "#e8d5b0", fontSize: 12, fontFamily: "inherit",
+                      }}
+                    />
+                    {newQuest.milestones.length > 1 && (
+                      <button onClick={() => setNewQuest(q => ({ ...q, milestones: q.milestones.filter((_, j) => j !== i) }))} style={{
+                        background: "transparent", border: "1px solid #2a1f40", color: "#4a3a60",
+                        borderRadius: 8, width: 32, cursor: "pointer", fontSize: 14,
+                      }}>✕</button>
+                    )}
+                  </div>
+                ))}
+                <button onClick={() => setNewQuest(q => ({ ...q, milestones: [...q.milestones, ""] }))} style={{
+                  width: "100%", padding: "7px 0", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+                  background: "transparent", border: "1px dashed #3a2a5a", color: "#6b5a80", fontSize: 12,
+                  marginBottom: 12,
+                }}>+ Add Milestone</button>
+
+                <button onClick={createQuest} style={{
+                  width: "100%", padding: "10px 0", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+                  background: `${STAT_COLORS[newQuest.stat]}22`,
+                  border: `1px solid ${STAT_COLORS[newQuest.stat]}88`,
+                  color: STAT_COLORS[newQuest.stat], fontSize: 14, fontWeight: "bold",
+                }}>🗺️ Add Quest</button>
+              </div>
+            )}
+
             {goals.map(g => {
               const isComplete = g.completedMilestones >= g.milestones.length;
               const nextMilestone = g.milestones[g.completedMilestones];
@@ -612,7 +740,7 @@ export default function HeroPath() {
                   border: `1px solid ${isComplete ? "#2a5a2a" : "#2a1f40"}`,
                   borderRadius: 10,
                 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 20 }}>{g.icon}</span>
                       <div>
@@ -620,6 +748,10 @@ export default function HeroPath() {
                         <div style={{ fontSize: 11, color: "#6b5a80" }}>{g.completedMilestones}/{g.milestones.length} milestones · {g.xpReward} XP total</div>
                       </div>
                     </div>
+                    <button onClick={() => deleteQuest(g.id)} style={{
+                      background: "transparent", border: "none", color: "#3a2a4a",
+                      fontSize: 16, cursor: "pointer", padding: "0 2px", lineHeight: 1, flexShrink: 0,
+                    }} title="Remove quest">✕</button>
                   </div>
 
                   {/* Progress bar */}
