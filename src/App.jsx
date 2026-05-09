@@ -1,749 +1,764 @@
 import { useState, useEffect } from "react";
 
+// ─── INITIAL STATE ───────────────────────────────────────────────────────────
 const INITIAL_STATE = {
   character: {
-    name: "Hero",
-    class: "Adventurer",
+    name: "Dan",
+    class: "Author-Mage",
     level: 1,
     xp: 0,
     xpToNext: 100,
-    stats: { strength: 5, wisdom: 5, endurance: 5, focus: 5 },
+    stats: { creativity: 5, discipline: 5, endurance: 5, focus: 5 },
     totalXpEarned: 0,
   },
   habits: [
-    { id: 1, name: "Morning Exercise", xpReward: 20, stat: "strength", completedToday: false, streak: 0 },
-    { id: 2, name: "Read 20 mins", xpReward: 15, stat: "wisdom", completedToday: false, streak: 0 },
-    { id: 3, name: "Meditate", xpReward: 10, stat: "focus", completedToday: false, streak: 0 },
+    { id: 1, name: "Edit Session (15+ min)", xpReward: 30, stat: "discipline", completedToday: false, streak: 0, icon: "✍️", desc: "One focused Pomodoro on Fairy Blooded" },
+    { id: 2, name: "Parking Lot Brain Dump", xpReward: 10, stat: "focus", completedToday: false, streak: 0, icon: "🧠", desc: "Write down distracting thoughts before editing" },
+    { id: 3, name: "Distraction Blocker On", xpReward: 10, stat: "focus", completedToday: false, streak: 0, icon: "🔒", desc: "Apps/sites blocked during edit session" },
+    { id: 4, name: "Scene Goal Set", xpReward: 15, stat: "discipline", completedToday: false, streak: 0, icon: "🎯", desc: "Wrote down exactly what to edit before starting" },
+    { id: 5, name: "Body Double / Co-work", xpReward: 20, stat: "endurance", completedToday: false, streak: 0, icon: "👥", desc: "Edited alongside someone (in person or virtual)" },
+    { id: 6, name: "Reward Claimed", xpReward: 10, stat: "creativity", completedToday: false, streak: 0, icon: "🎁", desc: "Treated yourself after hitting today's edit goal" },
   ],
   goals: [
-    { id: 1, name: "Write a Novel", progress: 0, xpReward: 500, stat: "wisdom", milestones: ["Outline done", "Chapter 10", "Chapter 20", "First Draft"], completedMilestones: 0 },
-    { id: 2, name: "Run a 5K", progress: 0, xpReward: 300, stat: "endurance", milestones: ["1km run", "2km run", "3km run", "5km run"], completedMilestones: 0 },
-    { id: 3, name: "Learn Spanish", progress: 0, xpReward: 400, stat: "focus", milestones: ["A1 basics", "A2 level", "B1 level", "Conversational"], completedMilestones: 0 },
+    {
+      id: 1, name: "Fairy Blooded — First Pass Edit", stat: "discipline",
+      xpReward: 800, progress: 0,
+      milestones: ["Ch 1–5 edited", "Ch 6–10 edited", "Ch 11–15 edited", "Ch 16–20 edited", "Ch 21–25 edited", "Full first pass done"],
+      completedMilestones: 0, icon: "📖"
+    },
+    {
+      id: 2, name: "Fairy Blooded — Polish Pass", stat: "creativity",
+      xpReward: 600, progress: 0,
+      milestones: ["Opening hook tightened", "Pacing pass done", "Dialogue polish done", "Final proofread done"],
+      completedMilestones: 0, icon: "✨"
+    },
+    {
+      id: 3, name: "Publication Readiness", stat: "endurance",
+      xpReward: 1000, progress: 0,
+      milestones: ["Cover finalized", "Back cover blurb locked", "ARCs sent", "Launch date set", "Book published 🎉"],
+      completedMilestones: 0, icon: "🏆"
+    },
+    {
+      id: 4, name: "Next Book — Groundwork", stat: "creativity",
+      xpReward: 400, progress: 0,
+      milestones: ["Concept outlined", "Characters sketched", "World notes started", "First chapter drafted"],
+      completedMilestones: 0, icon: "🌱"
+    },
   ],
   milestones: [
-    { id: 1, name: "First Blood", desc: "Complete your first habit", earned: false, icon: "⚔️" },
-    { id: 2, name: "Streak Warrior", desc: "Maintain a 7-day streak", earned: false, icon: "🔥" },
-    { id: 3, name: "Level 5 Sage", desc: "Reach level 5", earned: false, icon: "📜" },
-    { id: 4, name: "Quest Keeper", desc: "Complete a long-term goal", earned: false, icon: "🏆" },
-    { id: 5, name: "Iron Will", desc: "Complete all habits in a day", earned: false, icon: "🛡️" },
-    { id: 6, name: "Arcane Scholar", desc: "Gain 1000 total XP", earned: false, icon: "✨" },
+    { id: 1, name: "First Words", desc: "Complete your first edit session", earned: false, icon: "⚔️" },
+    { id: 2, name: "Focused Mind", desc: "Complete all 4 focus habits in one day", earned: false, icon: "🔥" },
+    { id: 3, name: "Seven-Day Scribe", desc: "Maintain a 7-day edit streak", earned: false, icon: "📜" },
+    { id: 4, name: "Chapter Champion", desc: "Hit the first quest milestone", earned: false, icon: "🛡️" },
+    { id: 5, name: "Author-Mage Lv 5", desc: "Reach level 5", earned: false, icon: "🧙" },
+    { id: 6, name: "Arcane Scholar", desc: "Earn 1,000 total XP", earned: false, icon: "✨" },
+    { id: 7, name: "Published!", desc: "Complete the Publication Readiness quest", earned: false, icon: "🎊" },
+    { id: 8, name: "Iron Quill", desc: "30 edit sessions logged", earned: false, icon: "🖋️" },
   ],
   log: [],
-  lastResetDate: new Date().toLocaleDateString("en-CA"),
+  totalEditSessions: 0,
 };
 
-const STORAGE_KEY = "heros-path-save";
-const APP_VERSION = "1.4.1";
-
-function todayString() {
-  return new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD"
-}
+const STORAGE_KEY = "heros-path-save-v2";
 
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return { ...INITIAL_STATE, lastResetDate: todayString() };
-    const parsed = JSON.parse(saved);
-    const today = todayString();
-    // Only reset if lastResetDate exists AND is a past date
-    if (parsed.lastResetDate && parsed.lastResetDate !== today) {
-      const habits = parsed.habits.map(h => ({
-        ...h,
-        streak: h.completedToday ? h.streak : 0,
-        completedToday: false,
-      }));
-      return { ...parsed, habits, lastResetDate: today };
-    }
-    // If lastResetDate is missing, just set it to today without resetting habits
-    if (!parsed.lastResetDate) {
-      return { ...parsed, lastResetDate: today };
-    }
-    return parsed;
+    return saved ? { ...INITIAL_STATE, ...JSON.parse(saved) } : INITIAL_STATE;
   } catch {
-    return { ...INITIAL_STATE, lastResetDate: todayString() };
+    return INITIAL_STATE;
   }
 }
 
 function saveState(state) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
 }
 
+// ─── XP / LEVEL HELPERS ──────────────────────────────────────────────────────
+function xpForLevel(level) { return Math.floor(100 * Math.pow(level, 1.4)); }
+
+function applyXP(char, amount) {
+  let { xp, level, xpToNext, stats, totalXpEarned } = char;
+  const prevClass = getClassForLevel(level);
+  xp += amount;
+  totalXpEarned += amount;
+  let leveledUp = false;
+  while (xp >= xpToNext) {
+    xp -= xpToNext;
+    level += 1;
+    xpToNext = xpForLevel(level);
+    leveledUp = true;
+  }
+  const newClass = getClassForLevel(level);
+  const classChanged = newClass.title !== prevClass.title;
+  return { ...char, xp, level, xpToNext, totalXpEarned, leveledUp, classChanged, newClassName: newClass.title };
+}
+
+// ─── STAT COLORS ─────────────────────────────────────────────────────────────
 const STAT_COLORS = {
-  strength: "#e05c5c",
-  wisdom: "#7b8cde",
-  endurance: "#5cb85c",
-  focus: "#d4a843",
+  creativity: "#f59e0b",
+  discipline: "#6366f1",
+  endurance:  "#10b981",
+  focus:      "#06b6d4",
 };
 
-const STAT_ICONS = { strength: "⚔️", wisdom: "📘", endurance: "🛡️", focus: "🎯" };
-const CLASS_BY_LEVEL = [
-  "Wanderer", "Apprentice", "Scout", "Seeker", "Adept",
-  "Champion", "Veteran", "Elite", "Master", "Legend"
+// ─── CLASS PROGRESSION ───────────────────────────────────────────────────────
+const CLASS_PROGRESSION = [
+  { level: 1,   title: "Apprentice Scribe",    icon: "📝", color: "#a0a0b0", desc: "The journey begins. Every word is a step forward." },
+  { level: 20,  title: "Author-Mage",          icon: "🧙", color: "#a78bfa", desc: "The craft awakens. You bend words to your will." },
+  { level: 40,  title: "Lorekeeper",           icon: "📖", color: "#6366f1", desc: "Worlds live inside you. Your stories outlast stone." },
+  { level: 60,  title: "Wordsmith Adept",      icon: "⚔️", color: "#06b6d4", desc: "Your prose cuts clean. Readers cannot look away." },
+  { level: 80,  title: "Arcane Chronicler",    icon: "🌌", color: "#10b981", desc: "You channel something older than language itself." },
+  { level: 100, title: "Grandmaster of Tales", icon: "👑", color: "#f59e0b", desc: "Legend. Your name echoes through the halls of story." },
 ];
 
-function XPBar({ current, max }) {
-  const pct = Math.min((current / max) * 100, 100);
-  return (
-    <div style={{ position: "relative" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{ fontSize: 11, color: "#a89060", letterSpacing: 1, textTransform: "uppercase" }}>Experience</span>
-        <span style={{ fontSize: 11, color: "#d4a843" }}>{current} / {max} XP</span>
-      </div>
-      <div style={{ background: "#1a1510", border: "1px solid #3a2e1a", borderRadius: 4, height: 12, overflow: "hidden" }}>
-        <div style={{
-          width: `${pct}%`, height: "100%",
-          background: "linear-gradient(90deg, #c47c1a, #f0c040)",
-          borderRadius: 4,
-          transition: "width 0.6s cubic-bezier(0.4,0,0.2,1)",
-          boxShadow: "0 0 8px #d4a843aa",
-        }} />
-      </div>
-    </div>
-  );
+function getClassForLevel(level) {
+  let current = CLASS_PROGRESSION[0];
+  for (const tier of CLASS_PROGRESSION) {
+    if (level >= tier.level) current = tier;
+    else break;
+  }
+  return current;
 }
 
-function StatBar({ stat, value }) {
-  const color = STAT_COLORS[stat];
-  return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3, alignItems: "center" }}>
-        <span style={{ fontSize: 11, color: "#a89060", display: "flex", alignItems: "center", gap: 4 }}>
-          {STAT_ICONS[stat]} {stat.charAt(0).toUpperCase() + stat.slice(1)}
-        </span>
-        <span style={{ fontSize: 12, color, fontWeight: 700 }}>{value}</span>
-      </div>
-      <div style={{ background: "#1a1510", border: "1px solid #2a2010", borderRadius: 2, height: 6, overflow: "hidden" }}>
-        <div style={{
-          width: `${Math.min(value * 4, 100)}%`, height: "100%",
-          background: `linear-gradient(90deg, ${color}88, ${color})`,
-          borderRadius: 2,
-          transition: "width 0.5s ease",
-        }} />
-      </div>
-    </div>
-  );
+function getNextClass(level) {
+  for (const tier of CLASS_PROGRESSION) {
+    if (tier.level > level) return tier;
+  }
+  return null;
 }
 
-function Card({ children, style = {} }) {
-  return (
-    <div style={{
-      background: "linear-gradient(160deg, #1e1a10 0%, #16130c 100%)",
-      border: "1px solid #3a2e1a",
-      borderRadius: 8,
-      padding: "18px 20px",
-      position: "relative",
-      ...style,
-    }}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, #d4a84340, transparent)", borderRadius: "8px 8px 0 0" }} />
-      {children}
-    </div>
-  );
-}
+// ─── COMPONENT ───────────────────────────────────────────────────────────────
+const ICONS = ["✍️","🧠","🔒","🎯","👥","🎁","💪","🏃","📚","🌿","🎮","🍳","🛠️","🎨","🧘","💧","🌅","🔥","⚔️","🌱"];
 
-function SectionTitle({ children }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-      <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, #3a2e1a, transparent)" }} />
-      <span style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "#d4a843", fontFamily: "'Cinzel', serif" }}>{children}</span>
-      <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, #3a2e1a)" }} />
-    </div>
-  );
-}
-
-function FloatingXP({ amount, id }) {
-  return (
-    <div key={id} style={{
-      position: "fixed", top: "40%", left: "50%", transform: "translateX(-50%)",
-      color: "#f0c040", fontSize: 28, fontWeight: 900, fontFamily: "'Cinzel', serif",
-      textShadow: "0 0 20px #d4a843",
-      animation: "floatUp 1.4s ease-out forwards",
-      pointerEvents: "none", zIndex: 9999,
-    }}>
-      +{amount} XP
-    </div>
-  );
-}
-
-function ResetModal({ onConfirm, onCancel }) {
-  return (
-    <div style={{
-      position: "fixed", inset: 0, background: "#00000090", zIndex: 10000,
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
-    }}>
-      <div style={{
-        background: "linear-gradient(160deg, #1e1a10, #16130c)",
-        border: "1px solid #8b0000",
-        borderRadius: 10, padding: "28px 24px", maxWidth: 320, width: "100%",
-        textAlign: "center",
-        boxShadow: "0 0 40px #8b000040",
-      }}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>💀</div>
-        <div style={{ fontFamily: "'Cinzel', serif", fontSize: 16, color: "#e05c5c", marginBottom: 8 }}>
-          Abandon Your Journey?
-        </div>
-        <div style={{ fontSize: 13, color: "#a89060", marginBottom: 24, lineHeight: 1.6 }}>
-          All progress, XP, levels, and achievements will be lost forever. This cannot be undone.
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onCancel} style={{
-            flex: 1, padding: "10px", background: "transparent",
-            border: "1px solid #3a2e1a", borderRadius: 6, color: "#a89060",
-            fontFamily: "'Cinzel', serif", fontSize: 11, cursor: "pointer",
-          }}>Cancel</button>
-          <button onClick={onConfirm} style={{
-            flex: 1, padding: "10px", background: "#3a0000",
-            border: "1px solid #8b0000", borderRadius: 6, color: "#e05c5c",
-            fontFamily: "'Cinzel', serif", fontSize: 11, cursor: "pointer",
-            letterSpacing: 1,
-          }}>Reset All</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function App() {
+export default function HeroPath() {
   const [state, setState] = useState(loadState);
-  const [tab, setTab] = useState("habits");
-  const [xpPopups, setXpPopups] = useState([]);
-  const [newHabit, setNewHabit] = useState("");
-  const [newGoal, setNewGoal] = useState("");
-  const [newGoalMilestones, setNewGoalMilestones] = useState([""]);
-  const [showAddHabit, setShowAddHabit] = useState(false);
-  const [showAddGoal, setShowAddGoal] = useState(false);
-  const [showResetModal, setShowResetModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("habits");
+  const [notification, setNotification] = useState(null);
+  const [levelUpAnim, setLevelUpAnim] = useState(false);
+  const [showNewRite, setShowNewRite] = useState(false);
+  const [newRite, setNewRite] = useState({ name: "", desc: "", stat: "discipline", xpReward: 15, icon: "✍️" });
 
-  // Save to localStorage whenever state changes
-  useEffect(() => {
-    saveState(state);
-  }, [state]);
+  useEffect(() => { saveState(state); }, [state]);
 
-  // Check for new day every minute (handles app left open past midnight)
+  // Reset daily habits at midnight
   useEffect(() => {
-    const interval = setInterval(() => {
-      const today = todayString();
-      setState(prev => {
-        if (prev.lastResetDate === today) return prev;
-        const habits = prev.habits.map(h => ({
+    const today = new Date().toDateString();
+    const lastReset = localStorage.getItem("last-reset");
+    if (lastReset !== today) {
+      setState(prev => ({
+        ...prev,
+        habits: prev.habits.map(h => ({
           ...h,
-          streak: h.completedToday ? h.streak : 0,
+          streak: h.completedToday ? h.streak : Math.max(0, h.streak - 1),
           completedToday: false,
-        }));
-        return { ...prev, habits, lastResetDate: today };
-      });
-    }, 60000);
-    return () => clearInterval(interval);
+        }))
+      }));
+      localStorage.setItem("last-reset", today);
+    }
   }, []);
 
-  const gainXP = (amount, stat) => {
-    const popupId = Date.now();
-    setXpPopups(p => [...p, { id: popupId, amount }]);
-    setTimeout(() => setXpPopups(p => p.filter(x => x.id !== popupId)), 1500);
+  function notify(msg, color = "#6366f1") {
+    setNotification({ msg, color });
+    setTimeout(() => setNotification(null), 2500);
+  }
 
-    setState(prev => {
-      const char = { ...prev.character };
-      char.xp += amount;
-      char.totalXpEarned += amount;
-      if (stat) char.stats = { ...char.stats, [stat]: char.stats[stat] + 1 };
-
-      while (char.xp >= char.xpToNext) {
-        char.xp -= char.xpToNext;
-        char.level += 1;
-        char.xpToNext = Math.floor(char.xpToNext * 1.4);
-        char.class = CLASS_BY_LEVEL[Math.min(char.level - 1, 9)];
-      }
-
-      const milestones = prev.milestones.map(m => {
-        if (m.earned) return m;
-        if (m.id === 6 && char.totalXpEarned >= 1000) return { ...m, earned: true };
-        if (m.id === 3 && char.level >= 5) return { ...m, earned: true };
-        return m;
-      });
-
-      const logEntry = { id: Date.now(), text: `Gained ${amount} XP`, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
-      return { ...prev, character: char, milestones, log: [logEntry, ...prev.log].slice(0, 10) };
-    });
-  };
-
-  const completeHabit = (id) => {
+  function completeHabit(id) {
     setState(prev => {
       const habit = prev.habits.find(h => h.id === id);
       if (!habit || habit.completedToday) return prev;
 
-      const habits = prev.habits.map(h => h.id === id
-        ? { ...h, completedToday: true, streak: h.streak + 1 }
-        : h
+      const newHabits = prev.habits.map(h =>
+        h.id === id ? { ...h, completedToday: true, streak: h.streak + 1 } : h
       );
-      const allDone = habits.every(h => h.completedToday);
-      const milestones = prev.milestones.map(m => {
-        if (m.earned) return m;
-        if (m.id === 1) return { ...m, earned: true };
-        if (m.id === 5 && allDone) return { ...m, earned: true };
-        if (m.id === 2 && habits.some(h => h.streak >= 7)) return { ...m, earned: true };
-        return m;
-      });
 
-      // Handle XP inline to avoid stale state
-      const char = { ...prev.character };
-      char.xp += habit.xpReward;
-      char.totalXpEarned += habit.xpReward;
-      char.stats = { ...char.stats, [habit.stat]: char.stats[habit.stat] + 1 };
-      while (char.xp >= char.xpToNext) {
-        char.xp -= char.xpToNext;
-        char.level += 1;
-        char.xpToNext = Math.floor(char.xpToNext * 1.4);
-        char.class = CLASS_BY_LEVEL[Math.min(char.level - 1, 9)];
+      let newChar = applyXP({ ...prev.character }, habit.xpReward);
+      const newStats = { ...newChar.stats };
+      if (newStats[habit.stat] !== undefined) newStats[habit.stat] += 1;
+      newChar.stats = newStats;
+
+      let newMilestones = [...prev.milestones];
+
+      // First edit session
+      if (id === 1) {
+        const totalSessions = (prev.totalEditSessions || 0) + 1;
+        if (totalSessions === 1) {
+          newMilestones = newMilestones.map(m => m.id === 1 ? { ...m, earned: true } : m);
+          notify("🏅 Achievement: First Words!", "#f59e0b");
+        }
+        if (totalSessions >= 30) {
+          newMilestones = newMilestones.map(m => m.id === 8 ? { ...m, earned: true } : m);
+        }
+        setState(s => ({ ...s, totalEditSessions: totalSessions }));
       }
-      const updatedMilestones = milestones.map(m => {
-        if (m.earned) return m;
-        if (m.id === 6 && char.totalXpEarned >= 1000) return { ...m, earned: true };
-        if (m.id === 3 && char.level >= 5) return { ...m, earned: true };
-        return m;
-      });
-      const logEntry = { id: Date.now(), text: `Gained ${habit.xpReward} XP`, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
 
-      return { ...prev, habits, milestones: updatedMilestones, character: char, log: [logEntry, ...prev.log].slice(0, 10) };
+      // 7-day streak
+      const newStreak = newHabits.find(h => h.id === id)?.streak || 0;
+      if (id === 1 && newStreak >= 7) {
+        newMilestones = newMilestones.map(m => m.id === 3 ? { ...m, earned: true } : m);
+      }
+
+      // All focus habits
+      const focusHabits = [2, 3, 4];
+      const allFocusDone = focusHabits.every(fid => newHabits.find(h => h.id === fid)?.completedToday);
+      if (allFocusDone) {
+        newMilestones = newMilestones.map(m => m.id === 2 ? { ...m, earned: true } : m);
+      }
+
+      // Level 5
+      if (newChar.level >= 5) {
+        newMilestones = newMilestones.map(m => m.id === 5 ? { ...m, earned: true } : m);
+      }
+
+      // 1000 XP
+      if (newChar.totalXpEarned >= 1000) {
+        newMilestones = newMilestones.map(m => m.id === 6 ? { ...m, earned: true } : m);
+      }
+
+      if (newChar.classChanged) {
+        setLevelUpAnim(true);
+        setTimeout(() => setLevelUpAnim(false), 1500);
+        notify(`✨ CLASS PROMOTION! You are now a ${newChar.newClassName}!`, "#f59e0b");
+      } else if (newChar.leveledUp) {
+        setLevelUpAnim(true);
+        setTimeout(() => setLevelUpAnim(false), 1500);
+        notify(`⬆️ LEVEL UP! You are now Level ${newChar.level}!`, "#f59e0b");
+      } else {
+        notify(`+${habit.xpReward} XP — ${habit.name}!`, STAT_COLORS[habit.stat] || "#6366f1");
+      }
+
+      const newLog = [
+        { text: `✅ ${habit.name} (+${habit.xpReward} XP)`, time: new Date().toLocaleTimeString() },
+        ...prev.log.slice(0, 19)
+      ];
+
+      const { leveledUp: _, ...charToSave } = newChar;
+
+      return {
+        ...prev,
+        character: charToSave,
+        habits: newHabits,
+        milestones: newMilestones,
+        log: newLog,
+        totalEditSessions: id === 1 ? (prev.totalEditSessions || 0) + 1 : prev.totalEditSessions,
+      };
     });
+  }
 
-    // Show floating XP popup (purely visual, doesn't need exact state)
-    const habit = state.habits.find(h => h.id === id);
-    if (habit) {
-      const popupId = Date.now();
-      setXpPopups(p => [...p, { id: popupId, amount: habit.xpReward }]);
-      setTimeout(() => setXpPopups(p => p.filter(x => x.id !== popupId)), 1500);
-    }
-  };
-
-  const advanceGoal = (id) => {
+  function advanceMilestone(goalId) {
     setState(prev => {
-      const goals = prev.goals.map(g => {
-        if (g.id !== id) return g;
-        const newCompleted = Math.min(g.completedMilestones + 1, g.milestones.length);
-        const newProgress = Math.round((newCompleted / g.milestones.length) * 100);
-        return { ...g, completedMilestones: newCompleted, progress: newProgress };
-      });
-      const goal = prev.goals.find(g => g.id === id);
-      const isComplete = goal && goal.completedMilestones + 1 >= goal.milestones.length;
-      const milestones = prev.milestones.map(m => m.id === 4 && isComplete ? { ...m, earned: true } : m);
-      return { ...prev, goals, milestones };
+      const goal = prev.goals.find(g => g.id === goalId);
+      if (!goal || goal.completedMilestones >= goal.milestones.length) return prev;
+
+      const newCompleted = goal.completedMilestones + 1;
+      const newProgress = Math.round((newCompleted / goal.milestones.length) * 100);
+      const isComplete = newCompleted >= goal.milestones.length;
+
+      const xpGain = isComplete ? goal.xpReward : Math.floor(goal.xpReward / goal.milestones.length);
+      let newChar = applyXP({ ...prev.character }, xpGain);
+
+      let newMilestones = [...prev.milestones];
+      if (goal.id === 1 && newCompleted === 1) {
+        newMilestones = newMilestones.map(m => m.id === 4 ? { ...m, earned: true } : m);
+        notify("🏅 Achievement: Chapter Champion!", "#f59e0b");
+      }
+      if (goal.id === 3 && isComplete) {
+        newMilestones = newMilestones.map(m => m.id === 7 ? { ...m, earned: true } : m);
+        notify("🎊 ACHIEVEMENT UNLOCKED: Published!", "#f59e0b");
+      }
+
+      if (newChar.classChanged) {
+        setLevelUpAnim(true);
+        setTimeout(() => setLevelUpAnim(false), 1500);
+        notify(`✨ CLASS PROMOTION! You are now a ${newChar.newClassName}!`, "#f59e0b");
+      } else if (newChar.leveledUp) {
+        setLevelUpAnim(true);
+        setTimeout(() => setLevelUpAnim(false), 1500);
+        notify(`⬆️ LEVEL UP! Level ${newChar.level}!`, "#f59e0b");
+      } else {
+        const milestoneName = goal.milestones[newCompleted - 1];
+        notify(`Quest progress: ${milestoneName} ✓ (+${xpGain} XP)`, "#10b981");
+      }
+
+      const newLog = [
+        { text: `🗺️ ${goal.name}: "${goal.milestones[newCompleted - 1]}" (+${xpGain} XP)`, time: new Date().toLocaleTimeString() },
+        ...prev.log.slice(0, 19)
+      ];
+
+      const { leveledUp: _, ...charToSave } = newChar;
+
+      return {
+        ...prev,
+        character: charToSave,
+        goals: prev.goals.map(g =>
+          g.id === goalId ? { ...g, completedMilestones: newCompleted, progress: newProgress } : g
+        ),
+        milestones: newMilestones,
+        log: newLog,
+      };
     });
-    const goal = state.goals.find(g => g.id === id);
-    if (goal) gainXP(Math.floor(goal.xpReward / goal.milestones.length), goal.stat);
-  };
+  }
 
-  const addHabit = () => {
-    if (!newHabit.trim()) return;
+  function createHabit() {
+    if (!newRite.name.trim()) return;
     setState(prev => ({
       ...prev,
-      habits: [...prev.habits, { id: Date.now(), name: newHabit, xpReward: 15, stat: "focus", completedToday: false, streak: 0 }]
+      habits: [...prev.habits, {
+        id: Date.now(),
+        name: newRite.name.trim(),
+        desc: newRite.desc.trim() || "",
+        stat: newRite.stat,
+        xpReward: newRite.xpReward,
+        icon: newRite.icon,
+        completedToday: false,
+        streak: 0,
+        custom: true,
+      }]
     }));
-    setNewHabit("");
-    setShowAddHabit(false);
-  };
+    setNewRite({ name: "", desc: "", stat: "discipline", xpReward: 15, icon: "✍️" });
+    setShowNewRite(false);
+    notify("New rite added to your practice!", STAT_COLORS[newRite.stat]);
+  }
 
-  const addGoal = () => {
-    if (!newGoal.trim()) return;
-    const filledMilestones = newGoalMilestones.filter(m => m.trim());
-    const milestones = filledMilestones.length > 0 ? filledMilestones : ["Phase 1", "Phase 2", "Phase 3", "Complete"];
-    setState(prev => ({
-      ...prev,
-      goals: [...prev.goals, { id: Date.now(), name: newGoal, progress: 0, xpReward: 200, stat: "wisdom", milestones, completedMilestones: 0 }]
-    }));
-    setNewGoal("");
-    setNewGoalMilestones([""]);
-    setShowAddGoal(false);
-  };
-
-  const deleteHabit = (id) => {
+  function deleteHabit(id) {
     setState(prev => ({ ...prev, habits: prev.habits.filter(h => h.id !== id) }));
-  };
+    notify("Rite removed.", "#6b5a80");
+  }
 
-  const deleteGoal = (id) => {
-    setState(prev => ({ ...prev, goals: prev.goals.filter(g => g.id !== id) }));
-  };
+  function resetGame() {
+    if (window.confirm("Reset all progress? This cannot be undone.")) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem("last-reset");
+      setState(INITIAL_STATE);
+      notify("Game reset. Your quest begins anew.", "#6366f1");
+    }
+  }
 
-  const handleReset = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setState(INITIAL_STATE);
-    setShowResetModal(false);
-    setTab("habits");
-  };
-
-  const char = state.character;
-
-  const tabs = [
-    { id: "habits", label: "Daily Rites" },
-    { id: "goals", label: "Quests" },
-    { id: "milestones", label: "Achievements" },
-  ];
+  const { character: char, habits, goals, milestones, log } = state;
+  const xpPct = Math.min(100, Math.round((char.xp / char.xpToNext) * 100));
+  const completedToday = habits.filter(h => h.completedToday).length;
+  const currentClass = getClassForLevel(char.level);
+  const nextClass = getNextClass(char.level);
+  const levelsToNext = nextClass ? nextClass.level - char.level : 0;
+  const classProgressPct = nextClass
+    ? Math.round(((char.level - currentClass.level) / (nextClass.level - currentClass.level)) * 100)
+    : 100;
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0d0b07; color: #c8b07a; font-family: 'EB Garamond', serif; min-height: 100vh; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0d0b07; }
-        ::-webkit-scrollbar-thumb { background: #3a2e1a; border-radius: 3px; }
-        @keyframes floatUp {
-          0% { opacity: 1; transform: translateX(-50%) translateY(0); }
-          100% { opacity: 0; transform: translateX(-50%) translateY(-80px); }
-        }
-        @keyframes shimmer {
-          0% { opacity: 0.5; }
-          50% { opacity: 1; }
-          100% { opacity: 0.5; }
-        }
-        .habit-btn:hover { background: #2a2010 !important; border-color: #d4a843 !important; }
-        .tab-btn:hover { color: #d4a843 !important; }
-        .action-btn:hover { background: #c47c1a !important; transform: translateY(-1px); box-shadow: 0 4px 16px #d4a84340 !important; }
-        .complete-btn:hover { opacity: 0.85; transform: scale(1.05); }
-        .reset-btn:hover { color: #e05c5c !important; border-color: #e05c5c !important; }
-        input { outline: none; }
-        input:focus { border-color: #d4a843 !important; }
-      `}</style>
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #0f0c1a 0%, #1a1028 50%, #0c1220 100%)",
+      fontFamily: "'Georgia', 'Times New Roman', serif",
+      color: "#e8d5b0",
+      padding: "0 0 60px 0",
+    }}>
 
-      {showResetModal && <ResetModal onConfirm={handleReset} onCancel={() => setShowResetModal(false)} />}
-      {xpPopups.map(p => <FloatingXP key={p.id} amount={p.amount} id={p.id} />)}
+      {/* NOTIFICATION */}
+      {notification && (
+        <div style={{
+          position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)",
+          background: notification.color, color: "#fff", padding: "10px 20px",
+          borderRadius: 30, fontWeight: "bold", fontSize: 14, zIndex: 1000,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+          animation: "fadeIn 0.3s ease",
+        }}>{notification.msg}</div>
+      )}
 
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "20px 16px 40px" }}>
+      {/* LEVEL UP FLASH */}
+      {levelUpAnim && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(245,158,11,0.15)",
+          zIndex: 999, pointerEvents: "none",
+          animation: "pulse 1.5s ease",
+        }} />
+      )}
 
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 24, position: "relative" }}>
-          <div style={{ fontSize: 11, letterSpacing: 4, color: "#6a5030", textTransform: "uppercase", marginBottom: 4 }}>Chronicles of</div>
-          <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: 26, fontWeight: 900, color: "#d4a843", letterSpacing: 2, textShadow: "0 0 30px #d4a84360" }}>
-            The Hero's Path
-          </h1>
-          <div style={{ fontSize: 10, color: "#3a2e1a", letterSpacing: 1, marginTop: 3 }}>v{APP_VERSION}</div>
-          <button
-            onClick={() => setShowResetModal(true)}
-            className="reset-btn"
-            style={{
-              position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
-              background: "transparent", border: "1px solid #3a2e1a", borderRadius: 6,
-              color: "#4a3820", fontSize: 10, fontFamily: "'Cinzel', serif",
-              letterSpacing: 1, padding: "5px 8px", cursor: "pointer",
-              textTransform: "uppercase", transition: "all 0.2s",
-            }}
-          >↺ Reset</button>
-        </div>
-
-        {/* Character Card */}
-        <Card style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: 14, marginBottom: 16, alignItems: "flex-start" }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: 8, flexShrink: 0,
-              background: "linear-gradient(135deg, #2a1f08, #1a1508)",
-              border: "2px solid #3a2e1a",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 30, position: "relative",
-              boxShadow: "inset 0 0 20px #00000060",
-            }}>
-              ⚔️
-              <div style={{
-                position: "absolute", bottom: -8, left: "50%", transform: "translateX(-50%)",
-                background: "#d4a843", color: "#0d0b07", fontSize: 10, fontWeight: 900,
-                padding: "1px 7px", borderRadius: 10, fontFamily: "'Cinzel', serif",
-                whiteSpace: "nowrap",
-              }}>LV {char.level}</div>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 2 }}>
-                <span style={{ fontFamily: "'Cinzel', serif", fontSize: 18, color: "#f0d890", fontWeight: 600 }}>{char.name}</span>
-              </div>
-              <div style={{ fontSize: 12, color: "#a89060", marginBottom: 10, letterSpacing: 1 }}>
-                {CLASS_BY_LEVEL[Math.min(char.level - 1, 9)]}
-              </div>
-              <XPBar current={char.xp} max={char.xpToNext} />
-            </div>
-          </div>
-
-          <SectionTitle>Attributes</SectionTitle>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
-            {Object.entries(char.stats).map(([stat, val]) => (
-              <StatBar key={stat} stat={stat} value={val} />
-            ))}
-          </div>
-        </Card>
-
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 2, marginBottom: 14, background: "#0d0b07", border: "1px solid #3a2e1a", borderRadius: 8, padding: 3 }}>
-          {tabs.map(t => (
-            <button key={t.id} className="tab-btn" onClick={() => setTab(t.id)} style={{
-              flex: 1, padding: "8px 4px", background: tab === t.id ? "#1e1a10" : "transparent",
-              border: tab === t.id ? "1px solid #3a2e1a" : "1px solid transparent",
-              borderRadius: 6, color: tab === t.id ? "#d4a843" : "#6a5030",
-              fontFamily: "'Cinzel', serif", fontSize: 10, letterSpacing: 1,
-              textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s",
-            }}>{t.label}</button>
-          ))}
-        </div>
-
-        {/* Habits Tab */}
-        {tab === "habits" && (
+      {/* ── HEADER / CHARACTER CARD ── */}
+      <div style={{
+        background: "linear-gradient(180deg, #1e1535 0%, #150f28 100%)",
+        borderBottom: "1px solid #3a2a5a",
+        padding: "20px 16px 16px",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
           <div>
-            <Card style={{ marginBottom: 10 }}>
-              <SectionTitle>Daily Rites</SectionTitle>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {state.habits.map(h => (
-                  <div key={h.id} className="habit-btn" onClick={() => !h.completedToday && completeHabit(h.id)} style={{
-                    display: "flex", alignItems: "center", gap: 12, padding: "10px 12px",
-                    border: `1px solid ${h.completedToday ? "#3a5a2a" : "#2a2010"}`,
-                    borderRadius: 6, background: h.completedToday ? "#0f1e0c" : "#13100a",
-                    transition: "all 0.2s", cursor: h.completedToday ? "default" : "pointer",
-                  }}>
-                    <div className="complete-btn" style={{
-                      width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                      border: `2px solid ${h.completedToday ? "#5cb85c" : STAT_COLORS[h.stat]}`,
-                      background: h.completedToday ? "#5cb85c20" : "transparent",
-                      color: h.completedToday ? "#5cb85c" : STAT_COLORS[h.stat],
-                      fontSize: 14,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      transition: "all 0.2s",
-                    }}>
-                      {h.completedToday ? "✓" : "○"}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, color: h.completedToday ? "#6a8a5a" : "#c8b07a", textDecoration: h.completedToday ? "line-through" : "none" }}>{h.name}</div>
-                      <div style={{ fontSize: 11, color: "#6a5030", marginTop: 2 }}>
-                        {STAT_ICONS[h.stat]} +{h.xpReward} XP · {h.stat}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                      <div style={{ fontSize: 16 }}>🔥</div>
-                      <div style={{ fontSize: 10, color: "#d4a843", fontWeight: 700 }}>{h.streak}d</div>
-                      <button onClick={() => deleteHabit(h.id)}
-                        onMouseOver={e => e.currentTarget.style.color = "#e05c5c"}
-                        onMouseOut={e => e.currentTarget.style.color = "#4a2a2a"}
-                        style={{ background: "transparent", border: "none", color: "#4a2a2a", fontSize: 13, cursor: "pointer", padding: "2px 4px", lineHeight: 1, transition: "color 0.2s" }}
-                        title="Delete habit">✕</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+            <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 3, textTransform: "uppercase", marginBottom: 2 }}>The Hero's Path</div>
+            <div style={{ fontSize: 22, fontWeight: "bold", color: "#f8e8c0" }}>{char.name}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+              <span style={{ fontSize: 16 }}>{currentClass.icon}</span>
+              <span style={{ fontSize: 13, color: currentClass.color, fontWeight: "bold" }}>{currentClass.title}</span>
+              <span style={{ fontSize: 12, color: "#6b5a80" }}>· Lv {char.level}</span>
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, marginBottom: 2 }}>TOTAL XP</div>
+            <div style={{ fontSize: 18, color: "#f59e0b", fontWeight: "bold" }}>{char.totalXpEarned.toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: "#6b5a80", marginTop: 2 }}>{completedToday}/{habits.length} today</div>
+          </div>
+        </div>
 
-            {showAddHabit ? (
-              <Card>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    value={newHabit}
-                    onChange={e => setNewHabit(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && addHabit()}
-                    placeholder="New daily rite..."
-                    style={{
-                      flex: 1, background: "#0d0b07", border: "1px solid #3a2e1a", borderRadius: 6,
-                      color: "#c8b07a", padding: "8px 12px", fontFamily: "'EB Garamond', serif", fontSize: 14,
-                      transition: "border-color 0.2s",
-                    }}
-                  />
-                  <button onClick={addHabit} className="action-btn" style={{
-                    background: "#c47c1a", border: "none", borderRadius: 6, color: "#0d0b07",
-                    padding: "8px 14px", fontFamily: "'Cinzel', serif", fontSize: 11, fontWeight: 700,
-                    cursor: "pointer", transition: "all 0.2s",
-                  }}>Add</button>
-                  <button onClick={() => setShowAddHabit(false)} style={{
-                    background: "transparent", border: "1px solid #3a2e1a", borderRadius: 6, color: "#6a5030",
-                    padding: "8px 10px", cursor: "pointer", fontSize: 14,
-                  }}>✕</button>
-                </div>
-              </Card>
-            ) : (
-              <button onClick={() => setShowAddHabit(true)} className="action-btn" style={{
-                width: "100%", padding: "10px", background: "#1a1508",
-                border: "1px dashed #3a2e1a", borderRadius: 6, color: "#6a5030",
-                fontFamily: "'Cinzel', serif", fontSize: 11, letterSpacing: 1,
-                textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s",
-              }}>+ Add Daily Rite</button>
-            )}
+        {/* XP Bar */}
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#8b7aaa", marginBottom: 4 }}>
+            <span>XP to Level {char.level + 1}</span>
+            <span>{char.xp} / {char.xpToNext}</span>
+          </div>
+          <div style={{ height: 8, background: "#2a1f40", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{
+              height: "100%", width: `${xpPct}%`,
+              background: "linear-gradient(90deg, #6366f1, #a78bfa)",
+              borderRadius: 4, transition: "width 0.5s ease",
+            }} />
+          </div>
+        </div>
+
+        {/* Class Progression Bar */}
+        {nextClass && (
+          <div style={{ marginBottom: 12, padding: "8px 10px", background: "#120d20", borderRadius: 8, border: `1px solid ${currentClass.color}33` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#8b7aaa", marginBottom: 4 }}>
+              <span style={{ color: currentClass.color }}>{currentClass.icon} {currentClass.title}</span>
+              <span>{levelsToNext} levels to <span style={{ color: nextClass.color }}>{nextClass.icon} {nextClass.title}</span></span>
+            </div>
+            <div style={{ height: 5, background: "#2a1f40", borderRadius: 3, overflow: "hidden" }}>
+              <div style={{
+                height: "100%", width: `${classProgressPct}%`,
+                background: `linear-gradient(90deg, ${currentClass.color}, ${nextClass.color})`,
+                borderRadius: 3, transition: "width 0.5s ease",
+              }} />
+            </div>
+          </div>
+        )}
+        {!nextClass && (
+          <div style={{ marginBottom: 12, padding: "8px 10px", background: "#120d20", borderRadius: 8, border: "1px solid #f59e0b33", textAlign: "center" }}>
+            <span style={{ fontSize: 11, color: "#f59e0b" }}>👑 Grandmaster of Tales — Maximum Class Achieved</span>
           </div>
         )}
 
-        {/* Goals Tab */}
-        {tab === "goals" && (
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+          {Object.entries(char.stats).map(([stat, val]) => (
+            <div key={stat} style={{
+              background: "#1a1030",
+              border: `1px solid ${STAT_COLORS[stat]}33`,
+              borderRadius: 8, padding: "6px 4px", textAlign: "center"
+            }}>
+              <div style={{ fontSize: 16, fontWeight: "bold", color: STAT_COLORS[stat] }}>{val}</div>
+              <div style={{ fontSize: 9, color: "#8b7aaa", textTransform: "uppercase", letterSpacing: 1 }}>{stat.slice(0,4)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── TABS ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderBottom: "1px solid #2a1f40" }}>
+        {[
+          { id: "habits", label: "✍️ Rites" },
+          { id: "goals",  label: "🗺️ Quests" },
+          { id: "badges", label: "🏅 Badges" },
+          { id: "log",    label: "📜 Log" },
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+            padding: "12px 4px", fontSize: 12, border: "none", cursor: "pointer",
+            background: activeTab === tab.id ? "#1e1535" : "transparent",
+            color: activeTab === tab.id ? "#c4a8ff" : "#6b5a80",
+            borderBottom: activeTab === tab.id ? "2px solid #6366f1" : "2px solid transparent",
+            transition: "all 0.2s",
+          }}>{tab.label}</button>
+        ))}
+      </div>
+
+      {/* ── CONTENT ── */}
+      <div style={{ padding: "16px 16px" }}>
+
+        {/* DAILY RITES */}
+        {activeTab === "habits" && (
           <div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 10 }}>
-              {state.goals.map(g => {
-                const pct = g.progress;
-                const done = g.completedMilestones >= g.milestones.length;
-                return (
-                  <Card key={g.id}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, textTransform: "uppercase" }}>Daily Rites</div>
+              <button onClick={() => setShowNewRite(v => !v)} style={{
+                background: showNewRite ? "#2a1f40" : "transparent",
+                border: "1px solid #3a2a5a", color: "#a07ac0", fontSize: 12,
+                padding: "4px 12px", borderRadius: 20, cursor: "pointer", fontFamily: "inherit",
+              }}>{showNewRite ? "✕ Cancel" : "+ New Rite"}</button>
+            </div>
+
+            {/* CREATE RITE FORM */}
+            {showNewRite && (
+              <div style={{ marginBottom: 14, padding: 14, background: "#1a1030", border: "1px solid #3a2a5a", borderRadius: 10 }}>
+                <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Forge a New Rite</div>
+
+                {/* Name */}
+                <input
+                  value={newRite.name}
+                  onChange={e => setNewRite(r => ({ ...r, name: e.target.value }))}
+                  placeholder="Rite name..."
+                  style={{
+                    width: "100%", boxSizing: "border-box", padding: "8px 10px",
+                    background: "#120d20", border: "1px solid #3a2a5a", borderRadius: 8,
+                    color: "#e8d5b0", fontSize: 13, fontFamily: "inherit", marginBottom: 8,
+                  }}
+                />
+
+                {/* Description */}
+                <input
+                  value={newRite.desc}
+                  onChange={e => setNewRite(r => ({ ...r, desc: e.target.value }))}
+                  placeholder="Short description (optional)..."
+                  style={{
+                    width: "100%", boxSizing: "border-box", padding: "8px 10px",
+                    background: "#120d20", border: "1px solid #3a2a5a", borderRadius: 8,
+                    color: "#e8d5b0", fontSize: 13, fontFamily: "inherit", marginBottom: 10,
+                  }}
+                />
+
+                {/* Stat Picker */}
+                <div style={{ fontSize: 11, color: "#8b7aaa", marginBottom: 6 }}>ATTRIBUTE</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 10 }}>
+                  {Object.entries(STAT_COLORS).map(([stat, color]) => (
+                    <button key={stat} onClick={() => setNewRite(r => ({ ...r, stat }))} style={{
+                      padding: "6px 4px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+                      border: `2px solid ${newRite.stat === stat ? color : "#2a1f40"}`,
+                      background: newRite.stat === stat ? `${color}22` : "#120d20",
+                      color: newRite.stat === stat ? color : "#6b5a80", fontSize: 11,
+                      textTransform: "capitalize",
+                    }}>{stat}</button>
+                  ))}
+                </div>
+
+                {/* XP Slider */}
+                <div style={{ fontSize: 11, color: "#8b7aaa", marginBottom: 6 }}>
+                  XP REWARD: <span style={{ color: STAT_COLORS[newRite.stat], fontWeight: "bold" }}>{newRite.xpReward}</span>
+                </div>
+                <input type="range" min="5" max="50" step="5" value={newRite.xpReward}
+                  onChange={e => setNewRite(r => ({ ...r, xpReward: Number(e.target.value) }))}
+                  style={{ width: "100%", accentColor: STAT_COLORS[newRite.stat], marginBottom: 10 }}
+                />
+
+                {/* Icon Picker */}
+                <div style={{ fontSize: 11, color: "#8b7aaa", marginBottom: 6 }}>ICON</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                  {ICONS.map(icon => (
+                    <button key={icon} onClick={() => setNewRite(r => ({ ...r, icon }))} style={{
+                      width: 34, height: 34, borderRadius: 8, fontSize: 16, cursor: "pointer",
+                      border: `2px solid ${newRite.icon === icon ? STAT_COLORS[newRite.stat] : "#2a1f40"}`,
+                      background: newRite.icon === icon ? `${STAT_COLORS[newRite.stat]}22` : "#120d20",
+                    }}>{icon}</button>
+                  ))}
+                </div>
+
+                <button onClick={createHabit} style={{
+                  width: "100%", padding: "10px 0", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+                  background: `${STAT_COLORS[newRite.stat]}22`,
+                  border: `1px solid ${STAT_COLORS[newRite.stat]}88`,
+                  color: STAT_COLORS[newRite.stat], fontSize: 14, fontWeight: "bold",
+                }}>⚔️ Forge Rite</button>
+              </div>
+            )}
+
+            {habits.map(h => (
+              <div key={h.id} style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "12px 14px", marginBottom: 8,
+                background: h.completedToday ? "#1a2a1a" : "#1a1030",
+                border: `1px solid ${h.completedToday ? "#2a5a2a" : "#2a1f40"}`,
+                borderRadius: 10, transition: "all 0.2s",
+              }}>
+                <div onClick={() => completeHabit(h.id)} style={{
+                  width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                  background: h.completedToday ? "#2a5a2a" : "#2a1f40",
+                  border: `2px solid ${h.completedToday ? "#4a9a4a" : STAT_COLORS[h.stat] || "#6366f1"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 18, cursor: h.completedToday ? "default" : "pointer",
+                }}>
+                  {h.completedToday ? "✓" : h.icon}
+                </div>
+                <div onClick={() => completeHabit(h.id)} style={{ flex: 1, cursor: h.completedToday ? "default" : "pointer", opacity: h.completedToday ? 0.6 : 1 }}>
+                  <div style={{ fontSize: 14, color: h.completedToday ? "#6a8a6a" : "#e8d5b0", fontWeight: "bold" }}>{h.name}</div>
+                  {h.desc && <div style={{ fontSize: 11, color: "#6b5a80", marginTop: 2 }}>{h.desc}</div>}
+                  <div style={{ fontSize: 10, color: STAT_COLORS[h.stat], marginTop: 2, textTransform: "capitalize" }}>{h.stat}</div>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                  <div style={{ fontSize: 13, color: STAT_COLORS[h.stat] || "#6366f1", fontWeight: "bold" }}>+{h.xpReward}</div>
+                  {h.streak > 0 && <div style={{ fontSize: 11, color: "#f59e0b" }}>🔥{h.streak}</div>}
+                  <button onClick={() => deleteHabit(h.id)} style={{
+                    background: "transparent", border: "none", color: "#3a2a4a",
+                    fontSize: 14, cursor: "pointer", padding: "0 2px", lineHeight: 1,
+                  }} title="Remove rite">✕</button>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ marginTop: 16, padding: 12, background: "#1a1030", borderRadius: 10, border: "1px solid #2a1f40" }}>
+              <div style={{ fontSize: 11, color: "#8b7aaa", marginBottom: 4 }}>💡 ADHD TIP</div>
+              <div style={{ fontSize: 12, color: "#a09080", lineHeight: 1.5 }}>
+                Set a 15-min timer before you begin. Your only goal: open the manuscript and change one sentence. Everything else is a bonus.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* QUESTS */}
+        {activeTab === "goals" && (
+          <div>
+            <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+              Active Quests
+            </div>
+            {goals.map(g => {
+              const isComplete = g.completedMilestones >= g.milestones.length;
+              const nextMilestone = g.milestones[g.completedMilestones];
+              return (
+                <div key={g.id} style={{
+                  marginBottom: 16, padding: "14px",
+                  background: "#1a1030",
+                  border: `1px solid ${isComplete ? "#2a5a2a" : "#2a1f40"}`,
+                  borderRadius: 10,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 20 }}>{g.icon}</span>
                       <div>
-                        <div style={{ fontFamily: "'Cinzel', serif", fontSize: 14, color: "#f0d890", marginBottom: 2 }}>{g.name}</div>
-                        <div style={{ fontSize: 11, color: "#6a5030" }}>{STAT_ICONS[g.stat]} +{g.xpReward} XP total · {g.stat}</div>
+                        <div style={{ fontSize: 14, fontWeight: "bold", color: "#e8d5b0" }}>{g.name}</div>
+                        <div style={{ fontSize: 11, color: "#6b5a80" }}>{g.completedMilestones}/{g.milestones.length} milestones · {g.xpReward} XP total</div>
                       </div>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: "#d4a843", fontFamily: "'Cinzel', serif" }}>{pct}%</div>
-                      <button onClick={() => deleteGoal(g.id)}
-                        onMouseOver={e => e.currentTarget.style.color = "#e05c5c"}
-                        onMouseOut={e => e.currentTarget.style.color = "#4a2a2a"}
-                        style={{ background: "transparent", border: "none", color: "#4a2a2a", fontSize: 13, cursor: "pointer", padding: "2px 4px", lineHeight: 1, transition: "color 0.2s", marginTop: 2 }}
-                        title="Delete quest">✕</button>
                     </div>
-                    </div>
+                  </div>
 
-                    <div style={{ background: "#0d0b07", border: "1px solid #2a2010", borderRadius: 4, height: 8, overflow: "hidden", marginBottom: 12 }}>
+                  {/* Progress bar */}
+                  <div style={{ height: 6, background: "#2a1f40", borderRadius: 3, overflow: "hidden", marginBottom: 10 }}>
+                    <div style={{
+                      height: "100%", width: `${g.progress}%`,
+                      background: `linear-gradient(90deg, ${STAT_COLORS[g.stat]}, ${STAT_COLORS[g.stat]}99)`,
+                      borderRadius: 3, transition: "width 0.5s ease",
+                    }} />
+                  </div>
+
+                  {/* Milestone list */}
+                  <div style={{ marginBottom: 10 }}>
+                    {g.milestones.map((m, i) => (
+                      <div key={i} style={{
+                        fontSize: 12, padding: "3px 0",
+                        color: i < g.completedMilestones ? "#4a8a4a" : i === g.completedMilestones ? "#e8d5b0" : "#4a3a60",
+                        display: "flex", alignItems: "center", gap: 6,
+                      }}>
+                        <span>{i < g.completedMilestones ? "✓" : i === g.completedMilestones ? "▶" : "○"}</span>
+                        {m}
+                      </div>
+                    ))}
+                  </div>
+
+                  {!isComplete && (
+                    <button onClick={() => advanceMilestone(g.id)} style={{
+                      width: "100%", padding: "9px 0", borderRadius: 8,
+                      background: `linear-gradient(135deg, ${STAT_COLORS[g.stat]}33, ${STAT_COLORS[g.stat]}22)`,
+                      border: `1px solid ${STAT_COLORS[g.stat]}66`,
+                      color: STAT_COLORS[g.stat], fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+                    }}>
+                      ✓ Complete: "{nextMilestone}"
+                    </button>
+                  )}
+                  {isComplete && (
+                    <div style={{ textAlign: "center", color: "#4a8a4a", fontSize: 13 }}>⚔️ Quest Complete!</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* BADGES */}
+        {activeTab === "badges" && (
+          <div>
+            {/* Class Progression Timeline */}
+            <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Class Progression</div>
+            <div style={{ marginBottom: 20 }}>
+              {CLASS_PROGRESSION.map((tier, i) => {
+                const unlocked = char.level >= tier.level;
+                const isCurrent = currentClass.title === tier.title;
+                return (
+                  <div key={tier.level} style={{ display: "flex", gap: 12, marginBottom: 6, alignItems: "flex-start" }}>
+                    {/* Line + dot */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 32, flexShrink: 0 }}>
                       <div style={{
-                        width: `${pct}%`, height: "100%",
-                        background: `linear-gradient(90deg, ${STAT_COLORS[g.stat]}88, ${STAT_COLORS[g.stat]})`,
-                        transition: "width 0.6s ease",
-                        boxShadow: `0 0 6px ${STAT_COLORS[g.stat]}80`,
-                      }} />
+                        width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                        background: unlocked ? `${tier.color}22` : "#120d20",
+                        border: `2px solid ${isCurrent ? tier.color : unlocked ? tier.color + "88" : "#2a1f40"}`,
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
+                        boxShadow: isCurrent ? `0 0 10px ${tier.color}66` : "none",
+                      }}>{tier.icon}</div>
+                      {i < CLASS_PROGRESSION.length - 1 && (
+                        <div style={{ width: 2, flex: 1, minHeight: 10, background: unlocked ? tier.color + "44" : "#1e1530", margin: "3px 0" }} />
+                      )}
                     </div>
-
-                    <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
-                      {g.milestones.map((m, i) => (
-                        <div key={i} style={{
-                          flex: 1, textAlign: "center", fontSize: 9, padding: "4px 2px", borderRadius: 4,
-                          background: i < g.completedMilestones ? "#1a3a10" : "#13100a",
-                          border: `1px solid ${i < g.completedMilestones ? "#3a6a20" : "#2a2010"}`,
-                          color: i < g.completedMilestones ? "#5cb85c" : "#4a3820",
-                          letterSpacing: 0.5,
-                        }}>
-                          {i < g.completedMilestones ? "✓" : `${i + 1}`}
-                          <div style={{ marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m}</div>
-                        </div>
-                      ))}
+                    {/* Info */}
+                    <div style={{ paddingTop: 4, opacity: unlocked ? 1 : 0.4 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: "bold", color: isCurrent ? tier.color : unlocked ? "#e8d5b0" : "#4a3a60" }}>{tier.title}</span>
+                        {isCurrent && <span style={{ fontSize: 10, color: tier.color, background: tier.color + "22", padding: "1px 6px", borderRadius: 10 }}>CURRENT</span>}
+                      </div>
+                      <div style={{ fontSize: 10, color: "#6b5a80", marginTop: 1 }}>Level {tier.level} · {tier.desc}</div>
                     </div>
-
-                    {!done && (
-                      <button onClick={() => advanceGoal(g.id)} className="action-btn" style={{
-                        width: "100%", padding: "7px", background: "#1e1408",
-                        border: `1px solid ${STAT_COLORS[g.stat]}60`, borderRadius: 6,
-                        color: STAT_COLORS[g.stat], fontFamily: "'Cinzel', serif", fontSize: 10,
-                        letterSpacing: 1, textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s",
-                      }}>Complete Next Milestone</button>
-                    )}
-                    {done && <div style={{ textAlign: "center", color: "#5cb85c", fontSize: 12, fontFamily: "'Cinzel', serif", letterSpacing: 1 }}>✦ Quest Complete ✦</div>}
-                  </Card>
+                  </div>
                 );
               })}
             </div>
 
-            {showAddGoal ? (
-              <Card>
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 11, color: "#a89060", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6, fontFamily: "'Cinzel', serif" }}>Quest Name</div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <input
-                      value={newGoal}
-                      onChange={e => setNewGoal(e.target.value)}
-                      placeholder="Name your quest..."
-                      style={{
-                        flex: 1, background: "#0d0b07", border: "1px solid #3a2e1a", borderRadius: 6,
-                        color: "#c8b07a", padding: "8px 12px", fontFamily: "'EB Garamond', serif", fontSize: 14,
-                        transition: "border-color 0.2s",
-                      }}
-                    />
-                    <button onClick={() => { setShowAddGoal(false); setNewGoal(""); setNewGoalMilestones([""]); }} style={{
-                      background: "transparent", border: "1px solid #3a2e1a", borderRadius: 6, color: "#6a5030",
-                      padding: "8px 10px", cursor: "pointer", fontSize: 14,
-                    }}>✕</button>
-                  </div>
+            <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Achievements</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {milestones.map(m => (
+                <div key={m.id} style={{
+                  padding: "12px 10px",
+                  background: m.earned ? "#1a2030" : "#120d1e",
+                  border: `1px solid ${m.earned ? "#3a4a6a" : "#1e1530"}`,
+                  borderRadius: 10, textAlign: "center",
+                  opacity: m.earned ? 1 : 0.4,
+                }}>
+                  <div style={{ fontSize: 28 }}>{m.icon}</div>
+                  <div style={{ fontSize: 12, fontWeight: "bold", color: m.earned ? "#c4a8ff" : "#6b5a80", marginTop: 4 }}>{m.name}</div>
+                  <div style={{ fontSize: 10, color: "#6b5a80", marginTop: 2 }}>{m.desc}</div>
                 </div>
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, color: "#a89060", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6, fontFamily: "'Cinzel', serif" }}>Milestones</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {newGoalMilestones.map((m, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontSize: 10, color: "#4a3820", width: 16, textAlign: "center", flexShrink: 0 }}>{i + 1}</div>
-                        <input
-                          value={m}
-                          onChange={e => {
-                            const updated = [...newGoalMilestones];
-                            updated[i] = e.target.value;
-                            setNewGoalMilestones(updated);
-                          }}
-                          placeholder={`Milestone ${i + 1}...`}
-                          style={{
-                            flex: 1, background: "#0d0b07", border: "1px solid #2a2010", borderRadius: 6,
-                            color: "#c8b07a", padding: "6px 10px", fontFamily: "'EB Garamond', serif", fontSize: 13,
-                            transition: "border-color 0.2s",
-                          }}
-                        />
-                        {newGoalMilestones.length > 1 && (
-                          <button
-                            onClick={() => setNewGoalMilestones(newGoalMilestones.filter((_, idx) => idx !== i))}
-                            onMouseOver={e => e.currentTarget.style.color = "#e05c5c"}
-                            onMouseOut={e => e.currentTarget.style.color = "#4a2a2a"}
-                            style={{ background: "transparent", border: "none", color: "#4a2a2a", fontSize: 13, cursor: "pointer", padding: "2px 4px", flexShrink: 0, transition: "color 0.2s" }}
-                          >✕</button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setNewGoalMilestones([...newGoalMilestones, ""])}
-                    style={{
-                      marginTop: 8, width: "100%", padding: "6px", background: "transparent",
-                      border: "1px dashed #2a2010", borderRadius: 6, color: "#4a3820",
-                      fontFamily: "'Cinzel', serif", fontSize: 10, letterSpacing: 1,
-                      textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s",
-                    }}
-                    onMouseOver={e => { e.currentTarget.style.borderColor = "#d4a843"; e.currentTarget.style.color = "#d4a843"; }}
-                    onMouseOut={e => { e.currentTarget.style.borderColor = "#2a2010"; e.currentTarget.style.color = "#4a3820"; }}
-                  >+ Add Milestone</button>
-                </div>
-                <button onClick={addGoal} className="action-btn" style={{
-                  width: "100%", background: "#c47c1a", border: "none", borderRadius: 6, color: "#0d0b07",
-                  padding: "9px", fontFamily: "'Cinzel', serif", fontSize: 11, fontWeight: 700,
-                  cursor: "pointer", transition: "all 0.2s", letterSpacing: 1,
-                }}>Begin Quest</button>
-              </Card>
-            ) : (
-              <button onClick={() => setShowAddGoal(true)} className="action-btn" style={{
-                width: "100%", padding: "10px", background: "#1a1508",
-                border: "1px dashed #3a2e1a", borderRadius: 6, color: "#6a5030",
-                fontFamily: "'Cinzel', serif", fontSize: 11, letterSpacing: 1,
-                textTransform: "uppercase", cursor: "pointer", transition: "all 0.2s",
-              }}>+ Add Quest</button>
-            )}
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Milestones Tab */}
-        {tab === "milestones" && (
+        {/* LOG */}
+        {activeTab === "log" && (
           <div>
-            <Card style={{ marginBottom: 10 }}>
-              <SectionTitle>Achievements</SectionTitle>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                {state.milestones.map(m => (
-                  <div key={m.id} style={{
-                    padding: "12px 10px", borderRadius: 6, textAlign: "center",
-                    background: m.earned ? "#1a1508" : "#0f0d08",
-                    border: `1px solid ${m.earned ? "#d4a84340" : "#1a1510"}`,
-                    opacity: m.earned ? 1 : 0.5,
-                    transition: "all 0.3s",
-                  }}>
-                    <div style={{ fontSize: 24, marginBottom: 4, filter: m.earned ? "none" : "grayscale(1)", animation: m.earned ? "shimmer 3s infinite" : "none" }}>{m.icon}</div>
-                    <div style={{ fontSize: 11, fontFamily: "'Cinzel', serif", color: m.earned ? "#d4a843" : "#4a3820", marginBottom: 3 }}>{m.name}</div>
-                    <div style={{ fontSize: 10, color: "#6a5030" }}>{m.desc}</div>
-                    {m.earned && <div style={{ fontSize: 9, color: "#5cb85c", marginTop: 4, letterSpacing: 1 }}>✓ EARNED</div>}
-                  </div>
-                ))}
+            <div style={{ fontSize: 11, color: "#8b7aaa", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+              Adventure Log
+            </div>
+            {log.length === 0 && (
+              <div style={{ color: "#4a3a60", fontSize: 14, textAlign: "center", marginTop: 40 }}>
+                No entries yet. Complete your first rite to begin the chronicle.
               </div>
-            </Card>
-
-            {state.log.length > 0 && (
-              <Card>
-                <SectionTitle>Recent Deeds</SectionTitle>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {state.log.map(entry => (
-                    <div key={entry.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#6a5030", borderBottom: "1px solid #1a1510", paddingBottom: 5 }}>
-                      <span>{entry.text}</span>
-                      <span style={{ color: "#3a2e1a" }}>{entry.time}</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
             )}
+            {log.map((entry, i) => (
+              <div key={i} style={{
+                padding: "10px 12px", marginBottom: 8,
+                background: "#1a1030", borderRadius: 8,
+                border: "1px solid #2a1f40",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+              }}>
+                <span style={{ fontSize: 13, color: "#c4a8ff" }}>{entry.text}</span>
+                <span style={{ fontSize: 11, color: "#4a3a60", flexShrink: 0, marginLeft: 8 }}>{entry.time}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
-    </>
+
+      {/* ── RESET BUTTON ── */}
+      <div style={{ textAlign: "center", marginTop: 20 }}>
+        <button onClick={resetGame} style={{
+          background: "transparent", border: "1px solid #3a2a4a",
+          color: "#4a3a60", fontSize: 11, padding: "6px 16px",
+          borderRadius: 20, cursor: "pointer", fontFamily: "inherit",
+        }}>Reset Progress</button>
+      </div>
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes pulse { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
+      `}</style>
+    </div>
   );
 }
